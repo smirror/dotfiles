@@ -1,0 +1,1 @@
+/home/libra/.local/share/broot/launcher/fish/br.fish

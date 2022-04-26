@@ -8,12 +8,13 @@ function fish_prompt
 end
 
 set GOPATH ~/go
-set PATH ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin
+set PATH ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin /usr/local/zeek/bin
 
 # replace command
 alias ack='ag'
 alias bat='batcat'
 alias cat='batcat'
+#alias cd='br'
 alias df='duf'
 alias dig='dog'
 alias diff='delta'
@@ -36,7 +37,7 @@ alias vdir='vdir --color=auto'
 alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
-alias fzf='fzf --preview "bat  --color=always --style=header,grid --line-range :100 {}"'
+alias fzf='fzf --preview "batcat  --color=always --style=header,grid --line-range :100 {}"'
 
 starship init fish | source
 set -U FZF_LEGACY_KEYBINDINGS 0

@@ -1,61 +1,76 @@
+# Disable default greeting
 function fish_greeting
-    echo "Welcome to Parrot OS"
 end
 
-function fish_prompt
-    echo (set_color red)"┌["(set_color cyan)"$hostname"(set_color red)"]─["(set_color yellow)(date "+%H:%M-%d/%m")(set_color red)"]─["(set_color blue)"$PWD"(set_color red)"]"
-    echo (set_color red)"└╼"(set_color green)"$USER"(set_color yellow)(set_color yellow)"\$"(set_color normal)
-end
+# Use starship prompt instead of custom prompt
 
 set GOPATH ~/go
 set PATH ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin /usr/local/zeek/bin
 
-# replace command
-alias ack='ag'
-alias bat='bat'
-alias cat='bat'
-#alias cd='br'
-alias df='duf'
-alias dig='dog'
-alias diff='delta'
-alias du='dust'
-alias ls='eza'
-alias tree='broot'
-alias find='fd'
-alias grep='rg'
-# alias history='mcfly'
-# alias sed='sd'
-alias ps='procs'
-alias top='/usr/bin/htop'
-alias htop='glances'
+# Modern replacements for traditional commands
+if command -v bat > /dev/null
+    alias cat='bat'
+end
 
-alias l='ls -lh --color=auto'
-alias ll='ls -ah --color=auto'
-alias dir='dir --color=auto'
-alias vdir='vdir --color=auto'
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-alias fzf='fzf --preview "batcat  --color=always --style=header,grid --line-range :100 {}"'
+if command -v exa > /dev/null
+    alias ls='exa'
+    alias l='exa -lh'
+    alias ll='exa -la'
+    alias tree='exa --tree'
+end
+
+if command -v fd > /dev/null
+    alias find='fd'
+end
+
+if command -v rg > /dev/null
+    alias grep='rg'
+end
+
+if command -v dust > /dev/null
+    alias du='dust'
+end
+
+if command -v procs > /dev/null
+    alias ps='procs'
+end
+
+# Git aliases
+alias g='git'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gs='git status'
+alias gd='git diff'
+
+# FZF with preview
+if command -v fzf > /dev/null; and command -v bat > /dev/null
+    set -x FZF_DEFAULT_OPTS '--height 40% --layout=reverse --border --preview "bat --color=always --style=header,grid --line-range :300 {}"'
+end
 
 starship init fish | source
 set -U FZF_LEGACY_KEYBINDINGS 0
 
 set fish_plugins theme peco
 
+# Key bindings
 function fish_user_key_bindings
-  bind \cr peco_select_history # Bind for prco history to Ctrl+r
+    if functions -q peco_select_history
+        bind \cr peco_select_history # Bind for peco select history to Ctrl+R
+    end
+    if functions -q peco_change_directory
+        bind \cf peco_change_directory # Bind for peco change directory to Ctrl+F
+    end
 end
 
-# hub alias
-eval (hub alias -s)
+# Initialize tools if available
+if command -v hub > /dev/null
+    eval (hub alias -s)
+end
 
-# mcfly
-mcfly init fish | source
-
-function fish_user_key_bindings
-  bind \cr peco_select_history # Bind for peco select history to Ctrl+R
-  bind \cf peco_change_directory # Bind for peco change directory to Ctrl+F
+if command -v mcfly > /dev/null
+    mcfly init fish | source
 end
 
 # fzf

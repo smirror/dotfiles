@@ -33,7 +33,7 @@ echo_step() {
 # Create backup of existing config
 backup_file() {
     local file="$1"
-    if [[ -f "$file" ]] || [[ -L "$file" ]]; then
+    if [[ -f "$file" ]] || [[ -L "$file" ]] || [[ -d "$file" ]]; then
         local backup="${file}.backup.$(date +%Y%m%d_%H%M%S)"
         echo_warn "Backing up existing $file to $backup"
         mv "$file" "$backup"
@@ -72,20 +72,29 @@ setup_fish() {
     create_symlink "$DOTFILES_DIR/fish/config.fish" "$fish_config_dir/config.fish"
     create_symlink "$DOTFILES_DIR/fish/fish_plugins" "$fish_config_dir/fish_plugins"
     
-    # Copy other fish files
+    # Move other fish files
     if [[ -d "$DOTFILES_DIR/fish/functions" ]]; then
-        cp -r "$DOTFILES_DIR/fish/functions" "$fish_config_dir/"
-        echo_info "Copied fish functions"
+        if [[ -d "$fish_config_dir/functions" ]]; then
+            backup_file "$fish_config_dir/functions"
+        fi
+        mv "$DOTFILES_DIR/fish/functions" "$fish_config_dir/"
+        echo_info "Moved fish functions"
     fi
     
     if [[ -d "$DOTFILES_DIR/fish/completions" ]]; then
-        cp -r "$DOTFILES_DIR/fish/completions" "$fish_config_dir/"
-        echo_info "Copied fish completions"
+        if [[ -d "$fish_config_dir/completions" ]]; then
+            backup_file "$fish_config_dir/completions"
+        fi
+        mv "$DOTFILES_DIR/fish/completions" "$fish_config_dir/"
+        echo_info "Moved fish completions"
     fi
     
     if [[ -d "$DOTFILES_DIR/fish/conf.d" ]]; then
-        cp -r "$DOTFILES_DIR/fish/conf.d" "$fish_config_dir/"
-        echo_info "Copied fish conf.d"
+        if [[ -d "$fish_config_dir/conf.d" ]]; then
+            backup_file "$fish_config_dir/conf.d"
+        fi
+        mv "$DOTFILES_DIR/fish/conf.d" "$fish_config_dir/"
+        echo_info "Moved fish conf.d"
     fi
 }
 

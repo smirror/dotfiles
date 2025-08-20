@@ -24,7 +24,7 @@ cd ~/.dotfiles
 # Install tools and setup dotfiles
 ./scripts/install.sh
 
-# Or just setup dotfiles without installing tools
+# Or just setup dotfiles without installing tools (moves dotfiles to ~/.config)
 ./scripts/setup.sh
 ```
 
@@ -112,7 +112,7 @@ decors/fish-ghq
 ## Scripts
 
 - `scripts/install.sh`: Full installation of tools and dotfiles
-- `scripts/setup.sh`: Setup dotfiles only (with backup of existing configs)
+- `scripts/setup.sh`: Setup dotfiles only (moves files to ~/.config with backup of existing configs)
 
 ## Directory Structure
 

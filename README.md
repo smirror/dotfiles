@@ -52,6 +52,10 @@ ln -sf ~/.dotfiles/config/tmux/tmux.conf ~/.tmux.conf
 - Tool-generated completions (`bun.fish`, `copilot.fish`, `smg.fish`) and backup files are not included in this snapshot.
 - `scripts/setup.sh` moves the Fish subdirectories out of this repository. Do not rerun it to synchronize this snapshot.
 
+### Checking Fish changes
+
+Run `python3 -B -m unittest discover -s tests` with Fish and Git installed. The tests use temporary homes and repositories; they do not load the active Fish configuration or credentials.
+
 ## Configuration Details
 
 ### Fish Shell

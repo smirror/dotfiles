@@ -4,8 +4,18 @@ end
 
 # Use starship prompt instead of custom prompt
 
-set GOPATH ~/go
-set PATH /opt/homebrew/bin ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin /usr/local/zeek/bin
+set -gx GOPATH $HOME/go
+set -gx BUN_INSTALL "$HOME/.bun"
+set -gx PNPM_HOME "$HOME/Library/pnpm"
+# Preserve tool priority without accumulating duplicate PATH entries.
+fish_add_path --path --move \
+    "$PNPM_HOME/bin" \
+    $HOME/.local/bin \
+    $HOME/.antigravity-ide/antigravity-ide/bin \
+    $BUN_INSTALL/bin \
+    /Library/TeX/texbin \
+    /opt/homebrew/bin
+fish_add_path --path --append $GOPATH/bin $HOME/.cargo/bin
 
 # Modern replacements for traditional commands
 if command -v bat > /dev/null
@@ -49,7 +59,9 @@ if command -v fzf > /dev/null; and command -v bat > /dev/null
     set -x FZF_DEFAULT_OPTS '--height 40% --layout=reverse --border --preview "bat --color=always --style=header,grid --line-range :300 {}"'
 end
 
-starship init fish | source
+if command -q starship
+    starship init fish | source
+end
 set -U FZF_LEGACY_KEYBINDINGS 0
 
 set fish_plugins theme peco
@@ -75,7 +87,7 @@ end
 
 # fzf
 function fzf-bcd-widget -d 'cd backwards'
-	pwd | awk -v RS=/ '/\n/ {exit} {p=p $0 "/"; print p}' | tac | eval (__fzfcmd) +m --select-1 --exit-0 $FZF_BCD_OPTS | read -l result
+	pwd | awk -v RS=/ '/\n/ {exit} {p=p $0 "/"; print p}' | eval (__fzfcmd) --tac +m --select-1 --exit-0 $FZF_BCD_OPTS | read -l result
 	[ "$result" ]; and cd $result
 	commandline -f repaint
 end
@@ -90,7 +102,7 @@ function fzf-cdhist-widget -d 'cd to one of the previously visited locations'
 		end
 	end
 	set dirprev $buf
-	string join \n $dirprev | tac | sed 1d | eval (__fzfcmd) +m --tiebreak=index --toggle-sort=ctrl-r $FZF_CDHIST_OPTS | read -l result
+	string join \n $dirprev | sed '$d' | eval (__fzfcmd) --tac +m --tiebreak=index --toggle-sort=ctrl-r $FZF_CDHIST_OPTS | read -l result
 	[ "$result" ]; and cd $result
 	commandline -f repaint
 end
@@ -149,13 +161,11 @@ function fzf-complete -d 'fzf completion and print selection back to commandline
 	commandline -f repaint
 end
 
-function fco -d "Fuzzy-find and checkout a branch"
-  git branch --all | grep -v HEAD | string trim | fzf | read -l result; and git checkout "$result"
-end
-
 function fco -d "Use `fzf` to choose which branch to check out" --argument-names branch
   set -q branch[1]; or set branch ''
-  git for-each-ref --format='%(refname:short)' refs/heads | fzf --height 10% --layout=reverse --border --query=$branch --select-1 | xargs git checkout
+  git for-each-ref --format='%(refname:short)' refs/heads | fzf --height 10% --layout=reverse --border --query=$branch --select-1 | read -l result
+  and test -n "$result"
+  and git checkout "$result"
 end
 
 function fcoc -d "Fuzzy-find and checkout a commit"
@@ -163,28 +173,26 @@ function fcoc -d "Fuzzy-find and checkout a commit"
 end
 
 function snag -d "Pick desired files from a chosen branch"
-  # use fzf to choose source branch to snag files FROM
-  set branch (git for-each-ref --format='%(refname:short)' refs/heads | fzf --height 20% --layout=reverse --border)
-  # avoid doing work if branch isn't set
-  if test -n "$branch"
-    # use fzf to choose files that differ from current branch
-    set files (git diff --name-only $branch | fzf --height 20% --layout=reverse --border --multi)
-  end
-  # avoid checking out branch if files aren't specified
-  if test -n "$files"
-    git checkout $branch $files
-  end
+  set -l branch (git for-each-ref --format='%(refname:short)' refs/heads | fzf --height 20% --layout=reverse --border)
+  test -n "$branch"; or return 1
+  set -l files (git diff --name-only "$branch" | fzf --height 20% --layout=reverse --border --multi)
+  set -q files[1]; or return 1
+  git checkout "$branch" -- $files
 end
 
 function fzum -d "View all unmerged commits across all local branches"
-  set viewUnmergedCommits "echo {} | head -1 | xargs -I BRANCH sh -c 'git log master..BRANCH --no-merges --color --format=\"%C(auto)%h - %C(green)%ad%Creset - %s\" --date=format:\'%b %d %Y\''"
+  set -l base (git rev-parse --verify refs/remotes/origin/HEAD 2>/dev/null)
+  set -q base[1]; or set base HEAD
+  set -l viewUnmergedCommits "git log $base..{} --no-merges --color --format='%C(auto)%h - %C(green)%ad%Creset - %s' --date=format:'%b %d %Y'"
 
-  git branch --no-merged master --format "%(refname:short)" | fzf --no-sort --reverse --tiebreak=index --no-multi \
+  git branch --no-merged "$base" --format "%(refname:short)" | fzf --no-sort --reverse --tiebreak=index --no-multi \
     --ansi --preview="$viewUnmergedCommits"
 end
 
-function fssh -d "Fuzzy-find ssh host via ag and ssh into it"
-  ag --ignore-case '^host [^*]' ~/.ssh/config | cut -d ' ' -f 2 | fzf | read -l result; and ssh "$result"
+function fssh -d "Fuzzy-find an SSH host and connect"
+  awk 'tolower($1) == "host" {for (i = 2; i <= NF && $i !~ /^#/; i++) if ($i !~ /[*?!]/) print $i}' ~/.ssh/config | fzf | read -l result
+  and test -n "$result"
+  and ssh -- "$result"
 end
 
 function fs -d "Switch tmux session"
@@ -192,12 +200,13 @@ function fs -d "Switch tmux session"
 end
 
 function fpass -d "Fuzzy-find a Lastpass entry and copy the password"
+  command -q lpass; or return 127
   if not lpass status -q
     lpass login $EMAIL
   end
 
   if not lpass status -q
-    exit
+    return 1
   end
 
   lpass ls | fzf | string replace -r -a '.+\[id: (\d+)\]' '$1' | read -l result; and lpass show -c --password "$result"
@@ -222,14 +231,6 @@ function vsr -d "List recently opened files with vscode"
     [ -n "$selected" ]; and codium "$selected"
 end
 
-# TeX Live paths
-fish_add_path /usr/local/texlive/2024/bin/universal-darwin
-fish_add_path /Library/TeX/texbin
-
-# bun
-set --export BUN_INSTALL "$HOME/.bun"
-set --export PATH $BUN_INSTALL/bin $PATH
-
 # Claude Code should use first-party login in normal shells.
 # Do not inherit the old OpenRouter gateway key; it causes 403 key-limit
 # failures when Claude Code resolves Anthropic-compatible credentials.
@@ -237,18 +238,5 @@ set --erase OPENROUTER_API_KEY
 set --erase ANTHROPIC_BASE_URL
 set --erase ANTHROPIC_API_KEY
 set --erase ANTHROPIC_AUTH_TOKEN
-
-
-# Added by Antigravity IDE
-fish_add_path /Users/libra/.antigravity-ide/antigravity-ide/bin
-
-
-# Added by Antigravity CLI installer
-set -gx PATH "/Users/libra/.local/bin" $PATH
-
-# pnpm
-set -gx PNPM_HOME "/Users/libra/Library/pnpm"
-if not string match -q -- "$PNPM_HOME/bin" $PATH
-  set -gx PATH "$PNPM_HOME/bin" $PATH
-end
-# pnpm end
+# Missing legacy variables should not make sourcing this file fail.
+true

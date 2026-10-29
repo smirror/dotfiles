@@ -106,6 +106,16 @@ printf '%s\\n' $PATH
         self.assertEqual(self.git("branch", "--show-current"), "feature")
         self.assertEqual((self.home / "checkouts").read_text().splitlines(), ["checkout", "feature"])
 
+    def test_nix_profile_precedes_existing_package_managers(self):
+        profile = self.home / ".nix-profile/bin"
+        profile.mkdir(parents=True)
+        marker = profile / "dotfiles-profile-probe"
+        marker.write_text("#!/bin/sh\nprintf 'nix-profile\\n'\n")
+        marker.chmod(0o755)
+        self.executable("dotfiles-profile-probe", "#!/bin/sh\nprintf 'other\\n'\n")
+        result = self.fish("dotfiles-profile-probe\n")
+        self.assertEqual(result.stdout, "nix-profile\n")
+
     def test_snag_cancel_preserves_edits_and_global_variables(self):
         self.branches()
         self.fish(self.select("feature", self.file.name, "", "feature", "") + '''set -g branch sentinel

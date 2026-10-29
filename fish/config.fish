@@ -9,6 +9,7 @@ set -gx BUN_INSTALL "$HOME/.bun"
 set -gx PNPM_HOME "$HOME/Library/pnpm"
 # Preserve tool priority without accumulating duplicate PATH entries.
 fish_add_path --path --move \
+    "$HOME/.nix-profile/bin" \
     "$PNPM_HOME/bin" \
     $HOME/.local/bin \
     $HOME/.antigravity-ide/antigravity-ide/bin \

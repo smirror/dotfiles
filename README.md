@@ -44,6 +44,14 @@ ln -sf ~/.dotfiles/config/git/gitconfig ~/.gitconfig
 ln -sf ~/.dotfiles/config/tmux/tmux.conf ~/.tmux.conf
 ```
 
+## Current macOS configuration
+
+- Git and Tmux use symlinks into `~/.dotfiles`; changing those source files changes the configuration used by this machine.
+- Fish uses separate files under `~/.config/fish/`. The tracked `fish/config.fish` is a snapshot; editing it does not update the active configuration.
+- The live `~/.config/fish/fish_variables` may contain API keys and is not copied into this snapshot update.
+- Tool-generated completions (`bun.fish`, `copilot.fish`, `smg.fish`) and backup files are not included in this snapshot.
+- `scripts/setup.sh` moves the Fish subdirectories out of this repository. Do not rerun it to synchronize this snapshot.
+
 ## Configuration Details
 
 ### Fish Shell

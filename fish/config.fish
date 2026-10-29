@@ -5,7 +5,7 @@ end
 # Use starship prompt instead of custom prompt
 
 set GOPATH ~/go
-set PATH ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin /usr/local/zeek/bin
+set PATH /opt/homebrew/bin ~/.local/bin /snap/bin /usr/sandbox/ /usr/local/bin /usr/bin /bin /usr/local/games /usr/games /usr/share/games /usr/local/sbin /usr/sbin /sbin $PATH $GOPATH/bin ~/.cargo/bin /usr/local/zeek/bin
 
 # Modern replacements for traditional commands
 if command -v bat > /dev/null
@@ -221,3 +221,34 @@ function vsr -d "List recently opened files with vscode"
 
     [ -n "$selected" ]; and codium "$selected"
 end
+
+# TeX Live paths
+fish_add_path /usr/local/texlive/2024/bin/universal-darwin
+fish_add_path /Library/TeX/texbin
+
+# bun
+set --export BUN_INSTALL "$HOME/.bun"
+set --export PATH $BUN_INSTALL/bin $PATH
+
+# Claude Code should use first-party login in normal shells.
+# Do not inherit the old OpenRouter gateway key; it causes 403 key-limit
+# failures when Claude Code resolves Anthropic-compatible credentials.
+set --erase OPENROUTER_API_KEY
+set --erase ANTHROPIC_BASE_URL
+set --erase ANTHROPIC_API_KEY
+set --erase ANTHROPIC_AUTH_TOKEN
+
+
+# Added by Antigravity IDE
+fish_add_path /Users/libra/.antigravity-ide/antigravity-ide/bin
+
+
+# Added by Antigravity CLI installer
+set -gx PATH "/Users/libra/.local/bin" $PATH
+
+# pnpm
+set -gx PNPM_HOME "/Users/libra/Library/pnpm"
+if not string match -q -- "$PNPM_HOME/bin" $PATH
+  set -gx PATH "$PNPM_HOME/bin" $PATH
+end
+# pnpm end

@@ -21,7 +21,7 @@ Review the official installer's proposed changes and its [uninstall documentatio
 ## Verification gates
 
 1. Run the isolated Python tests and syntax checks. Fake installer/Nix executors prove routing and failure handling only.
-2. With a real Nix runtime, run `scripts/home-manager.sh check`. Each of the four `homeConfigurations` must actually evaluate. This is not a cross-OS execution test.
+2. Review the [tool/version inventory](tool-inventory.md), then with a real Nix runtime, run `scripts/home-manager.sh check`. Each of the four `homeConfigurations` must actually evaluate. This is not a cross-OS execution test.
 3. Review the generated `flake.lock`, then build the native activation package with `scripts/home-manager.sh build`. Inspect the generated `result/home-files`, including the Home Manager-generated files beyond the explicitly imported sources.
 4. Build for a disposable home and test activation there, with separate HOME/XDG/profile state. Verify normal shell startup, declared binaries, keys, candidate cancellation and missing-history handling. Activation in macOS and WSL must be recorded separately.
 5. Before live activation, compare every generated destination, capture file contents/link targets/owners/modes and current Home Manager/Nix profile targets, and agree which existing files may be moved aside. Stop on unrecognized paths or concurrent edits.

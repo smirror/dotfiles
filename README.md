@@ -18,6 +18,8 @@ The shared environment is declared in `flake.nix` and `home.nix`. Both macOS and
 - Git/Tmux settings, `fish_variables`, histories, credentials and client permission settings are outside this migration.
 - Home Manager normally links managed files into the Nix store; an identical existing regular file may be left in place. Parent directories and unrelated local files stay outside its ownership.
 
+See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. The pinned Fish and ripgrep versions are currently older than the inspected machine's versions.
+
 ### Prepare and build
 
 The initial shell script installs a pinned, checksum-verified official Nix release if Nix is absent. On macOS this adds the Nix volume, build users and daemon; review [the migration procedure](docs/nix-migration.md) before running it. It does not switch the login shell or apply Home Manager.
@@ -83,19 +85,11 @@ Features:
 - Status bar customization
 - 256 color support
 
-## Tools Included
+## Tool declarations
 
-The install script will set up these modern CLI tools:
+The Nix declaration currently contains 15 explicit CLI packages plus Fish and Home Manager. This adds `fd` and `lazygit` to the previously published draft. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
 
-- **bat**: Better cat with syntax highlighting
-- **exa**: Modern ls replacement
-- **fd**: Fast and user-friendly find alternative
-- **ripgrep (rg)**: Faster grep alternative
-- **dust**: Better du
-- **procs**: Modern ps replacement
-- **fzf**: Fuzzy finder
-- **fish**: User-friendly shell
-- **tmux**: Terminal multiplexer
+The current editor is Neovim + LazyVim. Its existing configuration remains separately managed; the retired SpaceVim configuration has been removed.
 
 ## Customization
 

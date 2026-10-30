@@ -40,8 +40,8 @@ in
     inherit username homeDirectory;
     stateVersion = "26.05";
     packages = with pkgs; [
-      bat coreutils findutils fzf gawk getopt ghq gnugrep gnused
-      peco perl ripgrep starship
+      bat coreutils fd findutils fzf gawk getopt ghq gnugrep gnused
+      lazygit peco perl ripgrep starship
     ];
     sessionPath = [ "${config.home.profileDirectory}/bin" ];
     file = {

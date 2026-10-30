@@ -9,48 +9,54 @@ Personal dotfiles configuration for development environment.
 - **Tmux**: Terminal multiplexer configuration
 - **Modern CLI Tools**: Replacements for traditional Unix tools (bat, exa, fd, rg, etc.)
 
-## Quick Start
+## Nix + Home Manager (macOS and WSL)
 
-### Installation
+The shared environment is declared in `flake.nix` and `home.nix`. Both macOS and WSL use the same declarations and commands; only OS/CPU detection and local user/home values differ. nix-darwin, NixOS and Ansible are not required.
 
-1. Clone this repository:
-```bash
-git clone git@github.com:smirror/dotfiles.git ~/.dotfiles
-cd ~/.dotfiles
+- `home.nix` installs the declared CLI tools and Fish, and manages an explicit list of Fish helper files.
+- Codex and Claude Code share `agents/global.md`. Existing external Skills keep their current installer ownership.
+- Git/Tmux settings, `fish_variables`, histories, credentials and client permission settings are outside this migration.
+- Home Manager normally links managed files into the Nix store; an identical existing regular file may be left in place. Parent directories and unrelated local files stay outside its ownership.
+
+See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. The pinned Fish and ripgrep versions are currently older than the inspected machine's versions.
+
+### Prepare and build
+
+The initial shell script installs a pinned, checksum-verified official Nix release if Nix is absent. On macOS this adds the Nix volume, build users and daemon; review [the migration procedure](docs/nix-migration.md) before running it. It does not switch the login shell or apply Home Manager.
+
+```sh
+./scripts/bootstrap.sh
+# Open a new shell after Nix installation.
+./scripts/home-manager.sh check   # evaluate all four declared OS/CPU targets
+./scripts/home-manager.sh build   # build the current target; do not activate it
 ```
 
-2. Run the installation script:
-```bash
-# Install tools and setup dotfiles
-./scripts/install.sh
+`DOTFILES_USER` and `DOTFILES_HOME` default to the current user and home directory. The same shared declaration handles `aarch64-darwin`, `x86_64-darwin`, `aarch64-linux` and `x86_64-linux`. Explicit overrides are intended for isolated evaluation/build tests, not another person's live home.
 
-# Or just setup dotfiles without installing tools (moves dotfiles to ~/.config)
-./scripts/setup.sh
+Nixpkgs and Home Manager are pinned to matching stable 26.05 commits. The first real Nix evaluation creates `flake.lock`; review and commit that generated lock file before treating the migration as complete. A syntax check alone is not Nix evaluation or a successful build.
+
+### Review and activate
+
+Inspect `result/home-files`, compare every managed destination and prepare the backups described in [the migration procedure](docs/nix-migration.md). Existing differing files cause a collision; there is no automatic forced overwrite.
+
+```sh
+# Only after the file/profile changes and restoration procedure are reviewed:
+./scripts/home-manager.sh switch
 ```
 
-### Manual Setup
+Do not run `fisher update` against the Nix-managed helper files. Change the tracked sources and rebuild instead. `fish_variables` is not an import source for Home Manager and must not be copied from the live machine into this repository.
 
-If you prefer to setup manually:
+### Checks without applying
 
-```bash
-# Fish shell configuration
-ln -sf ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
-ln -sf ~/.dotfiles/fish/fish_plugins ~/.config/fish/fish_plugins
-
-# Git configuration (update email in config/git/gitconfig first)
-ln -sf ~/.dotfiles/config/git/gitconfig ~/.gitconfig
-
-# Tmux configuration
-ln -sf ~/.dotfiles/config/tmux/tmux.conf ~/.tmux.conf
+```sh
+python3 -B -m unittest discover -s tests -v
 ```
 
-## Current macOS configuration
+The tests use temporary homes and repositories. Installer and Nix command-routing tests use fakes and do not prove a real Nix install/build. They never load live Fish credentials.
 
-- Git and Tmux use symlinks into `~/.dotfiles`; changing those source files changes the configuration used by this machine.
-- Fish uses separate files under `~/.config/fish/`. The tracked `fish/config.fish` is a snapshot; editing it does not update the active configuration.
-- The live `~/.config/fish/fish_variables` may contain API keys and is not copied into this snapshot update.
-- Tool-generated completions (`bun.fish`, `copilot.fish`, `smg.fish`) and backup files are not included in this snapshot.
-- `scripts/setup.sh` moves the Fish subdirectories out of this repository. Do not rerun it to synchronize this snapshot.
+### Existing deployment
+
+The current Git/Tmux links into `~/.dotfiles` remain unchanged. The live Fish configuration remains separate until Home Manager is explicitly activated. The original `scripts/install.sh` is Linux-only; `scripts/setup.sh` moves Fish subdirectories out of the repository. Neither legacy script is part of the Nix workflow and neither should be run for this migration.
 
 ## Configuration Details
 
@@ -79,19 +85,11 @@ Features:
 - Status bar customization
 - 256 color support
 
-## Tools Included
+## Tool declarations
 
-The install script will set up these modern CLI tools:
+The Nix declaration currently contains 15 explicit CLI packages plus Fish and Home Manager. This adds `fd` and `lazygit` to the previously published draft. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
 
-- **bat**: Better cat with syntax highlighting
-- **exa**: Modern ls replacement
-- **fd**: Fast and user-friendly find alternative
-- **ripgrep (rg)**: Faster grep alternative
-- **dust**: Better du
-- **procs**: Modern ps replacement
-- **fzf**: Fuzzy finder
-- **fish**: User-friendly shell
-- **tmux**: Terminal multiplexer
+The current editor is Neovim + LazyVim. Its existing configuration remains separately managed; the retired SpaceVim configuration has been removed.
 
 ## Customization
 

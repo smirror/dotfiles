@@ -1,39 +1,40 @@
 function peco_select_history
-  if test (count $argv) = 0
-    set peco_flags --layout=bottom-up
-  else
-    set peco_flags --layout=bottom-up --query "$argv"
+  set -l peco_flags --layout=bottom-up
+  if set -q argv[1]
+    set -a peco_flags --query "$argv"
   end
-
-  history|peco $peco_flags|read foo
-
-  if [ $foo ]
-    commandline $foo
-  else
-    commandline ''
-  end
+  history | peco $peco_flags | read -l selection; or return 1
+  test -n "$selection"; or return 1
+  commandline -- "$selection"
 end
 
 function _peco_change_directory
-  if [ (count $argv) ]
-    peco --layout=bottom-up --query "$argv "|perl -pe 's/([ ()])/\\\\$1/g'|read foo
-  else
-    peco --layout=bottom-up |perl -pe 's/([ ()])/\\\\$1/g'|read foo
+  set -l peco_flags --layout=bottom-up
+  if set -q argv[1]
+    set -a peco_flags --query "$argv"
   end
-  if [ $foo ]
-    builtin cd $foo
-  else
-    commandline ''
-  end
+  peco $peco_flags | read -l directory; or return 1
+  test -d "$directory"; or return 1
+  builtin cd -- "$directory"
 end
 
 function peco_change_directory
+  set -l directories "$PWD"/*/
+  # shortcut: peco candidates are line-delimited, use cd directly for names containing newlines.
   begin
-    echo $HOME/.config
-    ls -ad */|perl -pe "s#^#$PWD/#"|egrep -v "^$PWD/\."|head -n 5
-    sort -r -t '|' -k 3 ~/.z|sed -e 's/\|.*//'
-    ghq list -p
-    ls -ad */|perl -pe "s#^#$PWD/#"|grep -v \.git
+    test -d "$HOME/.config"; and printf '%s\n' "$HOME/.config"
+    if set -q directories[1]
+      printf '%s\n' $directories[1..5]
+    end
+    if set -q Z_DATA[1]; and test -f "$Z_DATA"
+      sort -t '|' -k3,3nr -- "$Z_DATA" | cut -d '|' -f1
+    end
+    if command -q ghq
+      command ghq list -p
+    end
+    if set -q directories[1]
+      printf '%s\n' $directories
+    end
   end | sed -e 's/\/$//' | awk '!a[$0]++' | _peco_change_directory $argv
 end
 

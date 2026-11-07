@@ -81,10 +81,10 @@ are not copied into the top-level declaration automatically.
 
 | Area | Current ownership to retain | Remaining decision |
 | --- | --- | --- |
-| Node, Corepack/pnpm, Bun | Existing Brew/Corepack/standalone installations | Runtime versions and package list; avoid replacing them alongside five unrelated CLI additions |
-| Python, uv, pipx | OS/Brew Python and existing isolated tool environments | Choose the default Python explicitly; an installed newer Python is not necessarily the selected interpreter |
-| Rust and global Cargo tools | rustup/Cargo and any local source repositories | Record toolchain/package versions and source restoration for local tools |
-| Go and Go tools | Current Go installation and existing tool distribution | Choose the runtime version and required tools |
+| Node, Corepack/pnpm, Bun | Preserve existing installations while auditing CLI dependencies | Opt-in development runtimes; prefer selected CLI packages with their own locked runtimes |
+| Python, uv, pipx | Preserve OS/Brew Python and existing isolated tool environments | No default global development Python; select interpreters and dependencies per retained tool |
+| Rust and global Cargo tools | Cargo is currently used to install tools; preserve rustup/Cargo and local sources | Prefer locked tool packages; Rust development remains opt-in |
+| Go and Go tools | Existing installation retained; currently unused | Excluded from the default reinstall set; add only when requested |
 | AI clients and external Skills | Existing native, Brew, npm and uv installers | Record required clients and exact sources; GSD is currently unused and excluded from the initial reinstall set |
 | macOS applications, fonts and TeX | Current installers, including Brew casks | Curate a Brewfile after choosing the wanted applications; do not export all dependencies or start services |
 | Specialist tools and local services | Current installers and existing data | Confirm need and preserve data; no service/database operations are performed here |
@@ -97,3 +97,71 @@ migration; it remains unconfirmed and was not retried during this inventory.
 A future Brewfile records selected Homebrew targets and an update policy; it
 is not a replacement for the Nix lock's exact package selection. Do not maintain
 the same desired CLI list in both managers. See [Homebrew Bundle documentation](https://docs.brew.sh/Brew-Bundle-and-Brewfile).
+
+## Minimal runtimes and controlled installation
+
+The reinstall set is an explicit selection, not an automatic import of installed
+software. No development language is enabled by default. Rust/Cargo, Go,
+Python, Node and package managers for development are opt-in when needed.
+Existing host installations stay intact while dependent tools are identified.
+
+For day-to-day CLI tools, prefer a selected Nix package over a chain of manual
+Node/npm/pnpm, Python/pip or Cargo installations. The locked package can bring
+its own runtime and dependencies; that does not require a global language
+interpreter or package manager. This is dependency management, not process
+isolation. Tools installed through Cargo and Rust development are separate needs.
+
+Prioritize Python and Node ownership before removing or replacing anything:
+
+- Separate OS-provided Python, tool-specific interpreters and project runtimes.
+  Do not replace the OS interpreter or install packages into it.
+- Some current Node entrypoints resolve `node` from PATH; others reference a
+  Homebrew path directly. Replacing the global runtime alone is not a migration.
+- Existing pipx environments can share one Homebrew Python, while uv tools may
+  use uv-managed Python. An isolated package environment alone does not pin its
+  interpreter or all dependency versions.
+- For an extra CLI outside Nixpkgs, record its approved source, exact tool and
+  runtime versions, dependency lock/hashes and expected executables before
+  adding a reinstall path. A bare versioned npm/pip command is not a full lock.
+- Keep project language environments separate. A project version file is not
+  permission to download a new runtime or tool automatically.
+
+The arm64 Linux tool-profile output was checked: it exposes none of `python`,
+`python3`, `node`, `npm`, `npx`, `pnpm`, `pip` or `pip3` in its bin directory.
+Other packages may still depend on runtimes inside their own closures. This
+check does not inventory every interpreter inside those dependencies.
+
+## Downloads, containers and update boundaries
+
+Use the repository's selected definitions as the normal installation entry
+point. Prefer locked Nix packages for shared CLI tools, an explicitly curated
+Homebrew list for macOS applications, and named official images for chosen
+container tools. Reduce manual website downloads; an exception needs an official
+source URL, exact version, integrity/signature verification and a documented
+update method. Homebrew-managed apps that cannot be restored at an exact
+version must be identified as exceptions, not described as fully pinned.
+
+For occasional security tools, a disposable container is an option after a tool
+has been selected. Record the official image, immutable digest, platform,
+required mounts and network access. A tag alone can move. Static analysis should
+receive only its target files, read-only where possible; writable outputs need a
+separate reviewed path. Docker-socket mounts, whole-home mounts, host networking
+and privileged execution require separate justification. Tools that need host
+kernel/network access need a tool-specific decision; a container may not be a
+functional substitute on macOS. No scanner or image is enrolled by this document.
+See [Docker image digests](https://docs.docker.com/dhi/explore/security-concepts/digests/)
+and [Docker's security model](https://docs.docker.com/engine/security/).
+
+Repository policy does not enforce command permissions. Pinning identifies what
+is fetched; it does not prove a version is free of vulnerabilities or stop an
+agent from executing a different installer. Instructions from a website or tool
+output are not authorization to install software. Installation/update commands,
+new sources and executable definitions need a separate reviewed execution
+boundary in the agent/client settings. Those permissions have not been changed
+by this work. Unreviewed manifest or lock edits must not authorize their own
+execution; avoid automatically running newly downloaded packages or scripts.
+
+Updates should be small reviewed definition/lock changes followed by relevant
+version and startup checks. Known vulnerability fixes also need updates; a
+permanent freeze is not the security policy. Do not silently track latest
+releases or add self-updating installers to the selected set.

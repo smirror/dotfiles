@@ -87,7 +87,9 @@ Features:
 
 ## Tool declarations
 
-The Nix declaration currently contains 15 explicit CLI packages plus Fish and Home Manager. This adds `fd` and `lazygit` to the previously published draft. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
+See the [selected reinstall targets and installer ownership](docs/tool-installation.md) for the initial tool set, version policy and optional new-machine LazyVim initialization.
+
+The Nix declaration currently contains 20 explicit CLI packages plus Fish and Home Manager. This includes Git, gh, tmux, jq and Neovim; their existing settings remain outside the added package ownership. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
 
 The current editor is Neovim + LazyVim. Its existing configuration remains separately managed; the retired SpaceVim configuration has been removed.
 

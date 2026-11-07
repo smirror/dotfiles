@@ -1,6 +1,6 @@
 # Tool inventory and additive migration
 
-Machine snapshot: 2026-10-29; declaration updated 2026-10-30.
+Machine snapshot: 2026-10-29, refreshed 2026-11-07; declaration updated 2026-11-07.
 This compares the legacy `scripts/install.sh`, the shared
 `home.nix` declaration and a read-only inventory of the current macOS machine.
 It records declaration changes and a proposed order of adoption, not an installation receipt. WSL has not
@@ -8,40 +8,43 @@ been inventoried or tested. Raw machine/package-manager output stays outside Git
 
 ## Current declaration
 
-`home.nix` explicitly lists 15 packages:
+`home.nix` explicitly lists 20 packages:
 
 ```
-bat coreutils fd findutils fzf gawk getopt ghq gnugrep gnused
-lazygit peco perl ripgrep starship
+bat coreutils fd findutils fzf gawk getopt gh ghq git gnugrep gnused
+jq lazygit neovim peco perl ripgrep starship tmux
 ```
 
 The Fish and Home Manager modules install their respective programs as well:
-17 direct components in total, excluding dependencies and the Nix bootstrap.
-This change adds `fd` and `lazygit` to the published draft's 13 explicit packages.
-It does not install either tool on the live machine.
+22 direct components in total, excluding dependencies and the Nix bootstrap.
+The first draft had 13 explicit packages; fd/lazygit raised that to 15.
+This update adds Git, gh, tmux, jq and Neovim. No tool is installed on the live machine.
+The [reinstall targets](tool-installation.md) record purpose, ownership and version policy.
 
-The legacy installer names 30 distinct apt/Cargo packages. Five overlap with
-the current declaration: `bat`, `ripgrep`, `fzf`, `fish` and `fd-find` (as `fd`).
-The eleven other CLI entries above make GNU helper requirements, `ghq`, `peco`,
-Perl, Starship and lazygit explicit; some were previously implicit OS tools.
-Home Manager is the new deployment component. The remaining 25 legacy entries are not all packages
-that should be added to the shared environment.
+The legacy installer names 30 distinct apt/Cargo packages. Nine overlap with
+this declaration: bat, ripgrep, fzf, fish, fd-find (as fd), git, gh, tmux and jq.
+The twelve other explicit CLI packages cover helper dependencies and newer
+workflows. Home Manager is the new deployment component. The remaining 21 legacy
+entries are not automatically required reinstall targets.
 
 ## Legacy list compared with the draft
 
 | Legacy entries | Current Nix declaration | Proposed treatment |
 | --- | --- | --- |
 | `bat`, `ripgrep`, `fzf`, `fish` | Declared | Keep; review versions and command precedence before activation |
-| `curl`, `wget`, `git`, `tmux`, `htop`, `tree`, `unzip`, `gnupg` | Not declared | Separate existing tools from missing commands; retain current installations |
+| `git`, `tmux` | Added | Binaries only; existing settings retained |
+| `curl`, `wget`, `htop`, `tree`, `unzip`, `gnupg` | Not declared | Separate existing tools from missing commands; retain current installations |
 | `vim` | Not declared | Current editor is Neovim + LazyVim; do not reintroduce the old editor configuration |
 | `build-essential`, `ca-certificates`, `lsb-release` | Not declared | OS/bootstrap requirements; do not translate these apt names into a shared CLI list |
 | `exa` | Not declared | Consider `eza` separately; the existing Fish aliases still check for `exa` |
 | `fd-find` | Added as `pkgs.fd` | Command `fd`; also enables the existing Fish `find` alias |
 | `du-dust` | Not declared | Existing Brew `dust`; eventual `pkgs.dust` adoption |
 | `procs`, `tokei`, `hyperfine` | Not declared | Optional additions restoring legacy CLI coverage |
-| `jq`, `httpie`, `silversearcher-ag` | Not declared | `jq` already exists; optional `pkgs.httpie` / `pkgs.silver-searcher` additions |
+| `jq` | Added | Nix version differs from the current OS jq |
+| `httpie`, `silversearcher-ag` | Not declared | Optional `pkgs.httpie` / `pkgs.silver-searcher` additions |
 | `nodejs`, `python3-pip`, `python3-venv` | Not declared | Preserve runtime/package-manager ownership; choose versions before migration |
-| `hub`, `gh` | Not declared | `gh` already exists; do not automatically restore `hub` |
+| `gh` | Added | Preserve authentication and client configuration |
+| `hub` | Not declared | Do not automatically restore the legacy tool |
 
 The old script also bootstraps Rust/rustup and Fisher conditionally and upgrades
 pip. Those actions are not included in the 30-package count and are not carried
@@ -60,7 +63,8 @@ source inspection; evaluation/build on the three targets is still required.
 | 2 | `fd`, `lazygit` | Added to the declaration, missing globally in the snapshot; useful for the current LazyVim environment |
 | 3 | `procs`, `tokei`, `hyperfine`, `wget`, `tree`, `httpie`, `silver-searcher` | Missing globally; optional legacy coverage, add only the tools still wanted |
 | 4 | `eza` | Optional replacement for the legacy `exa` entry; review the related aliases together |
-| Later | `neovim`, `gh`, `tmux`, `htop`, `dust`, `jq`, Git/GnuPG | Already usable; declaring them transfers command/version ownership rather than filling a missing-tool gap |
+| Added | `git`, `gh`, `tmux`, `jq`, `neovim` | Selected reinstall targets; existing implementations remain installed |
+| Later | `htop`, `dust`, GnuPG | Existing tools; choose ownership separately |
 
 Adding `fd`, `procs` or `eza` can enable conditional Fish aliases and change
 `find`, `ps` or `ls` behavior. Review that behavior as part of each addition.
@@ -77,8 +81,8 @@ The current Neovim is Brew 0.12.6 with LuaJIT. `~/.config/nvim` contains the
 LazyVim starter configuration and `lazy-lock.json`; plugins are managed by
 lazy.nvim. This directory is currently outside Git management.
 
-- Add only the Neovim binary when its version is accepted. Keep the current
-  LazyVim configuration and plugin ownership during the initial migration.
+- Neovim is now declared as a binary only. Keep the current LazyVim
+  configuration and plugin ownership.
 - Do not enable an additional Home Manager Neovim configuration/plugin layer
   over the existing `init.lua` without a separate comparison.
 - A Tree-sitter CLI 0.26.3 already exists in Mason's bin directory. The Brew
@@ -86,9 +90,9 @@ lazy.nvim. This directory is currently outside Git management.
   a second CLI merely because the normal shell PATH does not contain one.
 - Mason also supplies editor tools such as language servers and formatters.
   Review those before duplicating them in the global package list.
-- Future management of the LazyVim source needs a writable-lockfile strategy:
-  lazy.nvim updates `lazy-lock.json`, while ordinary Nix-store source links are
-  read-only. Plugin caches, Mason downloads and editor state remain outside Git.
+- LazyVim configuration management is excluded from the plan. Only optional
+  initialization on a new machine is documented. lazy.nvim keeps its writable
+  lock file; plugins, Mason downloads and editor state remain outside Git.
 - Only the retired `.SpaceVim.d/init.toml` is removed in this change. The live
   LazyVim files, OS-provided Vim and Vim history are untouched.
 
@@ -113,9 +117,9 @@ The machine's Fish, ripgrep and Neovim versions were rechecked on 2026-11-06.
 | Fish | Brew 4.9.3 | [4.9.3](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fi/fish/package.nix) | Matching source version; new provider |
 | ripgrep | Brew 15.2.0 | [15.2.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/ri/ripgrep/package.nix) | Matching source version; new provider |
 | Starship | Existing standalone binary 1.24.2 | [1.27.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/st/starship/package.nix#L15) | Newer version and new provider; already declared |
-| Neovim | Brew 0.12.6 | [0.12.6](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/ne/neovim-unwrapped/package.nix#L108) | Matching version; not declared |
+| Neovim | Brew 0.12.6 | [0.12.6](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/ne/neovim-unwrapped/package.nix#L108) | Matching version; binary newly declared |
 | Tree-sitter CLI | Mason 0.26.3 | [0.26.11](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/tr/tree-sitter/package.nix#L115) | Competing provider; not declared |
-| GitHub CLI | Brew 2.103.0 | [2.103.3](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/gh/gh/package.nix#L17) | Patch update; not declared |
+| GitHub CLI | Brew 2.103.3 | [2.103.3](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/gh/gh/package.nix#L17) | Matching version; binary newly declared |
 | fzf | Not on global PATH | [0.74.5](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fz/fzf/package.nix#L14) | Addition; already declared |
 | fd | Not on global PATH | [10.5.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fd/fd/package.nix#L14) | Newly declared |
 | lazygit | Not on global PATH | [0.66.2](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/la/lazygit/package.nix#L11) | Newly declared |
@@ -126,7 +130,7 @@ the resulting package versions; it is not silently changed by this inventory.
 
 ## Do not import the whole machine inventory
 
-The inspected Brew installation has 162 formulae and four casks; 33 formulae
+The refreshed Brew installation has 170 formulae and four casks; 34 formulae
 have `installed_on_request` metadata. This is historical metadata, not a reliable
 list of desired top-level declarations. Importing every formula would duplicate
 libraries and preserve accidental dependencies.
@@ -140,7 +144,9 @@ Global npm/Cargo/Python tools, agent clients, externally distributed Skills,
 TeX/fonts and specialist applications are inventoried privately. They are not
 automatically added, removed or redistributed here. Bun's global-list command
 failed with `InvalidNPMLockfile`; its package inventory remains unconfirmed.
-GUI applications outside Brew were not exhaustively inventoried.
+The refresh also records 53 application bundles from /Applications and the user
+Applications directory privately. This is a presence inventory, not a selected
+reinstall list or proof of complete GUI coverage.
 
 ## Verification of the declaration update
 
@@ -166,3 +172,11 @@ acceptance steps. Host configuration has not been activated.
 
 For these additions and any later choices, follow the [migration verification and restoration procedure](nix-migration.md).
 Record declaration changes, real distribution checks and live application separately.
+
+## Shared CLI reinstall update
+
+The added Git, gh, tmux, jq and Neovim packages use the existing lock. Three-profile
+evaluation and an arm64 Linux build passed. The five binaries started from the
+built tool environment; jq processed a fixture and Neovim started headless with
+LuaJIT using no user init, plugins or history. This does not test native macOS or
+WSL execution and does not apply any host configuration.

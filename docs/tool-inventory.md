@@ -52,7 +52,7 @@ by Home Manager rather than refreshed through Fisher.
 
 “Missing” below means absent from the inspected normal shell PATH, not absent
 from every project, editor or cache. Package availability is based on pinned
-source inspection; evaluation/build on the four targets is still required.
+source inspection; evaluation/build on the three targets is still required.
 
 | Order | Tools | Change and reason |
 | --- | --- | --- |
@@ -100,22 +100,27 @@ plugin update or health check was run during the inventory.
 
 ## Version changes need a separate decision
 
-Pinned Nixpkgs: `08d3a97586f6b6343b3b5e799980773629432610`. The Nix column is
-read from source, not from a built environment.
+Pinned Nixpkgs: `6dadaf4375be35033e1c84395adbd53ff5fded96`.
+Home Manager: `b787c48e2ec57a9d098f5c2721882a3bc1e16f97`.
+The development revisions and their source hashes are recorded in `flake.lock`.
+The declared platforms are Apple Silicon macOS and arm64/x86_64 Linux (WSL);
+Intel Mac support was explicitly excluded. The Nix versions below were read
+by real Nix evaluation for Apple Silicon macOS; this does not prove a macOS build.
+The machine's Fish, ripgrep and Neovim versions were rechecked on 2026-11-06.
 
 | Tool | Current provider/version | Pinned Nix source | Effect if adopted |
 | --- | --- | --- | --- |
-| Fish | Brew 4.9.3 | [4.7.1](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/fi/fish/package.nix#L153) | Older version; already declared |
-| ripgrep | Brew 15.2.0 | [15.1.0](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/ri/ripgrep/package.nix#L20) | Older version; already declared |
-| Starship | Existing standalone binary 1.24.2 | [1.25.1](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/st/starship/package.nix#L15) | Newer version and new provider; already declared |
-| Neovim | Brew 0.12.6 | [0.12.4](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/ne/neovim-unwrapped/package.nix#L108) | Older version; not declared |
-| Tree-sitter CLI | Mason 0.26.3 | [0.26.8](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/tr/tree-sitter/package.nix#L115) | Competing provider; not declared |
-| GitHub CLI | Brew 2.103.0 | [2.103.3](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/gh/gh/package.nix#L17) | Patch update; not declared |
-| fzf | Not on global PATH | [0.72.0](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/fz/fzf/package.nix#L14) | Addition; already declared |
-| fd | Not on global PATH | [10.4.2](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/fd/fd/package.nix#L14) | Newly declared |
-| lazygit | Not on global PATH | [0.61.1](https://github.com/NixOS/nixpkgs/blob/08d3a97586f6b6343b3b5e799980773629432610/pkgs/by-name/la/lazygit/package.nix#L11) | Newly declared |
+| Fish | Brew 4.9.3 | [4.9.3](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fi/fish/package.nix) | Matching source version; new provider |
+| ripgrep | Brew 15.2.0 | [15.2.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/ri/ripgrep/package.nix) | Matching source version; new provider |
+| Starship | Existing standalone binary 1.24.2 | [1.27.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/st/starship/package.nix#L15) | Newer version and new provider; already declared |
+| Neovim | Brew 0.12.6 | [0.12.6](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/ne/neovim-unwrapped/package.nix#L108) | Matching version; not declared |
+| Tree-sitter CLI | Mason 0.26.3 | [0.26.11](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/tr/tree-sitter/package.nix#L115) | Competing provider; not declared |
+| GitHub CLI | Brew 2.103.0 | [2.103.3](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/gh/gh/package.nix#L17) | Patch update; not declared |
+| fzf | Not on global PATH | [0.74.5](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fz/fzf/package.nix#L14) | Addition; already declared |
+| fd | Not on global PATH | [10.5.0](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/fd/fd/package.nix#L14) | Newly declared |
+| lazygit | Not on global PATH | [0.66.2](https://github.com/NixOS/nixpkgs/blob/6dadaf4375be35033e1c84395adbd53ff5fded96/pkgs/by-name/la/lazygit/package.nix#L11) | Newly declared |
 
-Resolve the already-declared Fish/ripgrep version changes before live activation.
+Verify native shell behavior and the selected command paths before live activation.
 An updated pin also requires review of the matching Home Manager revision and
 the resulting package versions; it is not silently changed by this inventory.
 
@@ -149,6 +154,15 @@ The real `home-manager.sh check` stopped because Nix is absent. No target was
 evaluated or built, no Home Manager activation ran, and no tool was installed
 or removed from the live environment. The Docker daemon was also unavailable;
 it was not started for this check.
+
+The 2026-11-07 update removes Intel Mac from the declared scope, advances both
+pinned inputs and records a real generated lock file. All three profiles evaluated
+successfully with Nix 2.35.4 in a disposable Docker container. The native arm64
+Linux Home Manager build, disposable-home activation, collision protection and
+first-activation restoration passed. The updated regression suite has 30 passing
+tests. See the [validation record](nix-migration.md#validated-snapshot-2026-11-07)
+for the tested scope. Native macOS and WSL runtime tests remain separate
+acceptance steps. Host configuration has not been activated.
 
 For these additions and any later choices, follow the [migration verification and restoration procedure](nix-migration.md).
 Record declaration changes, real distribution checks and live application separately.

@@ -48,7 +48,7 @@ with open(os.environ["CALLS"], "a") as f: f.write(json.dumps({"installer": sys.a
     def fake_nix(self):
         self.executable("nix", '''import os,sys,json
 with open(os.environ["CALLS"], "a") as f:
-    f.write(json.dumps({"argv": sys.argv[1:], "user": os.environ.get("DOTFILES_USER"), "home": os.environ.get("DOTFILES_HOME")}) + "\\n")
+    f.write(json.dumps({"argv": sys.argv[1:], "user": os.environ.get("DOTFILES_USER"), "home": os.environ.get("DOTFILES_HOME"), "nix_config": os.environ.get("NIX_CONFIG")}) + "\\n")
 ''')
 
     def run_script(self, name, *args):
@@ -67,7 +67,7 @@ with open(os.environ["CALLS"], "a") as f:
         self.assertEqual(self.records(), [])
 
     def test_unsupported_platform_is_rejected_before_download(self):
-        for os_name, arch in (("FreeBSD", "arm64"), ("Linux", "riscv64")):
+        for os_name, arch in (("FreeBSD", "arm64"), ("Linux", "riscv64"), ("Darwin", "x86_64")):
             self.env.update(TEST_OS=os_name, TEST_ARCH=arch)
             for script in ("bootstrap.sh", "home-manager.sh"):
                 result = self.run_script(script)
@@ -108,7 +108,6 @@ with open(os.environ["CALLS"], "a") as f:
         self.fake_nix()
         self.env.update(DOTFILES_USER="test-user", DOTFILES_HOME="/temporary/home with spaces")
         for os_name, arch, target in (("Darwin", "arm64", "aarch64-darwin"),
-                                      ("Darwin", "x86_64", "x86_64-darwin"),
                                       ("Linux", "aarch64", "aarch64-linux"),
                                       ("Linux", "x86_64", "x86_64-linux")):
             with self.subTest(target=target):
@@ -125,16 +124,26 @@ with open(os.environ["CALLS"], "a") as f:
         result = self.run_script("home-manager.sh", "check")
         self.assertEqual(result.returncode, 0, result.stderr)
         records = self.records()
-        self.assertEqual(len(records), 4)
-        for row, target in zip(records, ("aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux")):
+        self.assertEqual(len(records), 3)
+        for row, target in zip(records, ("aarch64-darwin", "aarch64-linux", "x86_64-linux")):
             self.assertEqual(row["argv"], ["--extra-experimental-features", "nix-command flakes", "eval", "--impure", "--raw",
                 f"{self.repo}#homeConfigurations.{target}.activationPackage.drvPath"])
             self.assertEqual((row["user"], row["home"]), ("fixture-user", self.env["HOME"]))
 
+    def test_features_are_inherited_without_losing_existing_nix_config(self):
+        self.fake_nix()
+        self.env["NIX_CONFIG"] = "max-jobs = 1"
+        for action in ("check", "build", "switch"):
+            result = self.run_script("home-manager.sh", action)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        for row in self.records():
+            self.assertEqual(row["nix_config"],
+                             "max-jobs = 1\nextra-experimental-features = nix-command flakes")
+
     def test_failed_profile_evaluation_stops_the_check(self):
         self.executable("nix", '''import os,sys
 with open(os.environ["CALLS"], "a") as f: f.write(sys.argv[-1] + "\\n")
-sys.exit(7 if "x86_64-darwin" in sys.argv[-1] else 0)
+sys.exit(7 if "aarch64-linux" in sys.argv[-1] else 0)
 ''')
         result = self.run_script("home-manager.sh", "check")
         self.assertEqual(result.returncode, 7)
@@ -167,7 +176,7 @@ sys.exit(7 if "x86_64-darwin" in sys.argv[-1] else 0)
         for action in ("check", "build"):
             result = self.run_script("home-manager.sh", action)
             self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(self.records()), 5)
+        self.assertEqual(len(self.records()), 4)
         for row in self.records():
             self.assertEqual((row["user"], row["home"]), ("other-user", "/temporary/other-home"))
 

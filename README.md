@@ -18,7 +18,7 @@ The shared environment is declared in `flake.nix` and `home.nix`. Both macOS and
 - Git/Tmux settings, `fish_variables`, histories, credentials and client permission settings are outside this migration.
 - Home Manager normally links managed files into the Nix store; an identical existing regular file may be left in place. Parent directories and unrelated local files stay outside its ownership.
 
-See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. The pinned Fish and ripgrep versions are currently older than the inspected machine's versions.
+See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. Fish and ripgrep match the inspected machine's versions. Intel Macs are outside the supported scope.
 
 ### Prepare and build
 
@@ -27,13 +27,13 @@ The initial shell script installs a pinned, checksum-verified official Nix relea
 ```sh
 ./scripts/bootstrap.sh
 # Open a new shell after Nix installation.
-./scripts/home-manager.sh check   # evaluate all four declared OS/CPU targets
+./scripts/home-manager.sh check   # evaluate all three declared OS/CPU targets
 ./scripts/home-manager.sh build   # build the current target; do not activate it
 ```
 
-`DOTFILES_USER` and `DOTFILES_HOME` default to the current user and home directory. The same shared declaration handles `aarch64-darwin`, `x86_64-darwin`, `aarch64-linux` and `x86_64-linux`. Explicit overrides are intended for isolated evaluation/build tests, not another person's live home.
+`DOTFILES_USER` and `DOTFILES_HOME` default to the current user and home directory. The same shared declaration handles `aarch64-darwin`, `aarch64-linux` and `x86_64-linux`. Explicit overrides are intended for isolated evaluation/build tests, not another person's live home.
 
-Nixpkgs and Home Manager are pinned to matching stable 26.05 commits. The first real Nix evaluation creates `flake.lock`; review and commit that generated lock file before treating the migration as complete. A syntax check alone is not Nix evaluation or a successful build.
+Nixpkgs and Home Manager use pinned development revisions with a committed `flake.lock`. Review these inputs together when updating them. `home.stateVersion` stays at `26.05`; it controls configuration compatibility, not the package release. A syntax check alone is not Nix evaluation or a successful build.
 
 ### Review and activate
 

@@ -21,7 +21,7 @@ Review the official installer's proposed changes and its [uninstall documentatio
 ## Verification gates
 
 1. Run the isolated Python tests and syntax checks. Fake installer/Nix executors prove routing and failure handling only.
-2. Review the [tool/version inventory](tool-inventory.md), then with a real Nix runtime, run `scripts/home-manager.sh check`. Each of the four `homeConfigurations` must actually evaluate. This is not a cross-OS execution test.
+2. Review the [tool/version inventory](tool-inventory.md), then with a real Nix runtime, run `scripts/home-manager.sh check`. Each of the three `homeConfigurations` must actually evaluate. This is not a cross-OS execution test.
 3. Review the generated `flake.lock`, then build the native activation package with `scripts/home-manager.sh build`. Inspect the generated `result/home-files`, including the Home Manager-generated files beyond the explicitly imported sources.
 4. Build for a disposable home and test activation there, with separate HOME/XDG/profile state. Verify normal shell startup, declared binaries, keys, candidate cancellation and missing-history handling. Activation in macOS and WSL must be recorded separately.
 5. Before live activation, compare every generated destination, capture file contents/link targets/owners/modes and current Home Manager/Nix profile targets, and agree which existing files may be moved aside. Stop on unrecognized paths or concurrent edits.
@@ -47,3 +47,35 @@ Run `scripts/home-manager.sh switch` only after the build, destination diff, bac
 ## Evidence status
 
 Record syntax, fake-executor tests, real evaluation, native build, isolated activation and live activation separately. Do not commit or push this migration until its diff has been reviewed. Do not report a macOS build as WSL execution evidence, or a local branch as a merged/pushed change.
+
+### Validated snapshot: 2026-11-07
+
+The committed lock uses Nixpkgs `6dadaf4375be35033e1c84395adbd53ff5fded96`
+and Home Manager `b787c48e2ec57a9d098f5c2721882a3bc1e16f97`.
+Intel Mac is excluded from the supported scope. Both scripts reject it before
+running installation/evaluation commands; arm64 and x86_64 Linux remain supported.
+
+Validation used an isolated container from `nixos/nix:2.35.4`, image digest
+`sha256:f159a58f390677f41e8e900a74b6e2f9c7f27b364122ae6acf7a652ce6c551c0`.
+No host home or credentials were mounted into it.
+
+| Check | Result |
+| --- | --- |
+| Python regression suite | 30 passed, including Intel Mac rejection and child-process feature inheritance |
+| Real Nix evaluation | All three declared profiles passed |
+| Native build | arm64 Linux Home Manager generation passed |
+| Collision protection | A differing existing instruction file blocked activation and remained intact |
+| Disposable-home activation | Passed after explicit backup of the conflicting fixture |
+| Fresh Fish startup | Required binaries, runtime fixture value, helper loading and PATH uniqueness passed; sourcing again kept PATH unique |
+| Global instruction deployment | Codex/Claude files both linked to the reviewed common source |
+| First-activation restoration | Restored the original instruction fixture, removed the new file/profile links and retained the runtime fixture |
+| Native macOS build/activation | Not run |
+| WSL runtime acceptance | Not run; Linux container execution is not WSL evidence |
+| Live host activation | Not run |
+
+The real build exposed a wrapper issue: outer `nix run` feature flags did not
+reach Home Manager's child Nix process. The wrapper now exports the required
+features through `NIX_CONFIG`, retaining any caller configuration. The build
+and activation results above are from the corrected wrapper. Host Nix settings
+were not edited. Interactive key selection under the Nix-built shell remains
+part of native acceptance; startup checks do not stand in for that test.

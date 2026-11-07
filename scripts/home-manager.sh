@@ -12,10 +12,9 @@ case "$dotfiles_action" in
 esac
 case "$(uname -s)/$(uname -m)" in
     Darwin/arm64) dotfiles_system=aarch64-darwin ;;
-    Darwin/x86_64) dotfiles_system=x86_64-darwin ;;
     Linux/aarch64|Linux/arm64) dotfiles_system=aarch64-linux ;;
     Linux/x86_64) dotfiles_system=x86_64-linux ;;
-    *) printf '%s\n' 'Supported platforms: macOS or Linux on arm64/x86_64.' >&2; exit 1 ;;
+    *) printf '%s\n' 'Supported platforms: Apple Silicon macOS or Linux on arm64/x86_64.' >&2; exit 1 ;;
 esac
 dotfiles_nix=$(command -v nix || true)
 if [ -z "$dotfiles_nix" ]; then
@@ -41,9 +40,13 @@ if [ "$dotfiles_action" = switch ] && {
     exit 1
 fi
 export DOTFILES_USER DOTFILES_HOME
+# Home Manager launches another Nix process, which must inherit these features.
+NIX_CONFIG="${NIX_CONFIG-}
+extra-experimental-features = nix-command flakes"
+export NIX_CONFIG
 dotfiles_repo=$(CDPATH= cd "$(dirname "$0")/.." && pwd -P)
 if [ "$dotfiles_action" = check ]; then
-    for dotfiles_target in aarch64-darwin x86_64-darwin aarch64-linux x86_64-linux; do
+    for dotfiles_target in aarch64-darwin aarch64-linux x86_64-linux; do
         printf '%s: ' "$dotfiles_target"
         "$dotfiles_nix" --extra-experimental-features 'nix-command flakes' eval --impure --raw \
             "$dotfiles_repo#homeConfigurations.$dotfiles_target.activationPackage.drvPath"

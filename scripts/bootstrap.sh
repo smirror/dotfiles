@@ -2,8 +2,8 @@
 set -eu
 
 case "$(uname -s)/$(uname -m)" in
-    Darwin/arm64|Darwin/x86_64|Linux/aarch64|Linux/x86_64) ;;
-    *) printf '%s\n' 'Supported platforms: macOS or Linux on arm64/x86_64.' >&2; exit 1 ;;
+    Darwin/arm64|Linux/aarch64|Linux/x86_64) ;;
+    *) printf '%s\n' 'Supported platforms: Apple Silicon macOS or Linux on arm64/x86_64.' >&2; exit 1 ;;
 esac
 if [ "$#" -ne 0 ]; then
     printf '%s\n' 'Usage: scripts/bootstrap.sh' >&2

@@ -88,6 +88,7 @@ are not copied into the top-level declaration automatically.
 | AI clients and external Skills | Existing native, Brew, npm and uv installers | Record required clients and exact sources; GSD is currently unused and excluded from the initial reinstall set |
 | macOS applications, fonts and TeX | Current installers, including Brew casks | Curate a Brewfile after choosing the wanted applications; do not export all dependencies or start services |
 | Specialist tools and local services | Current installers and existing data | Confirm need and preserve data; no service/database operations are performed here |
+| Apple developer tools | Existing selected Xcode/Command Line Tools | macOS-only selection below; no automatic installation or switching |
 
 Full raw inventory stays outside this public repository. Personal prompts,
 API keys, account state, application data and project paths are not install
@@ -141,14 +142,18 @@ source URL, exact version, integrity/signature verification and a documented
 update method. Homebrew-managed apps that cannot be restored at an exact
 version must be identified as exceptions, not described as fully pinned.
 
-For occasional security tools, a disposable container is an option after a tool
-has been selected. Record the official image, immutable digest, platform,
+Security tools are excluded from the global reinstall set. Invoke a selected
+tool through Docker or an explicitly chosen equivalent isolated environment;
+do not add its scanner executable or package manager installer to the host.
+Record the official image, immutable digest, platform,
 required mounts and network access. A tag alone can move. Static analysis should
 receive only its target files, read-only where possible; writable outputs need a
 separate reviewed path. Docker-socket mounts, whole-home mounts, host networking
 and privileged execution require separate justification. Tools that need host
 kernel/network access need a tool-specific decision; a container may not be a
-functional substitute on macOS. No scanner or image is enrolled by this document.
+functional substitute on macOS. Such tools stay out of this default path until
+an appropriate isolated execution method is selected; they do not fall back to
+automatic global installation. No scanner or image is enrolled by this document.
 See [Docker image digests](https://docs.docker.com/dhi/explore/security-concepts/digests/)
 and [Docker's security model](https://docs.docker.com/engine/security/).
 
@@ -165,3 +170,31 @@ Updates should be small reviewed definition/lock changes followed by relevant
 version and startup checks. Known vulnerability fixes also need updates; a
 permanent freeze is not the security policy. Do not silently track latest
 releases or add self-updating installers to the selected set.
+
+## macOS developer tools
+
+Apple's developer tools are a host prerequisite selected separately from the
+shared CLI set. They are not part of the container-only security-tool category.
+
+| Condition | Choice | Source and version policy |
+| --- | --- | --- |
+| Host compilation needs Apple's compiler/SDK/Git tools without the IDE | Command Line Tools | Apple distribution; select a version compatible with the host macOS |
+| Apple application development needs the IDE, platform SDKs or simulators | Full Xcode | Apple distribution; select the Xcode version and build explicitly against macOS/SDK requirements |
+| A suitable full Xcode is already selected | Keep it | Do not separately install CLT merely because its standalone receipt is absent |
+| Linux/WSL | Neither | Keep Apple tools outside the shared Linux declaration |
+
+The inspected machine selects `/Applications/Xcode.app/Contents/Developer`,
+with Xcode 27.1, build 27A9275. A separate CLT 27.0 receipt also exists; that is
+an observation, not a requirement to reinstall both packages on a new machine.
+
+Record the chosen Apple version/build and official source before installation.
+The Mac App Store is a convenient current-release route, not an exact historical
+version lock. Apple's additional downloads provide specific releases and may
+require Apple Account sign-in. Do not substitute an unverified mirror to avoid
+authentication. Installation, license acceptance, first-launch components and
+changing the selected developer directory are separate host actions; none is
+automatically performed here. This document records the option and policy,
+not a tested unattended Xcode installer.
+
+See [Apple's downloads](https://developer.apple.com/xcode/resources/) and
+[Xcode/macOS compatibility](https://developer.apple.com/xcode/system-requirements).

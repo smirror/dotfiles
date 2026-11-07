@@ -99,6 +99,19 @@ A future Brewfile records selected Homebrew targets and an update policy; it
 is not a replacement for the Nix lock's exact package selection. Do not maintain
 the same desired CLI list in both managers. See [Homebrew Bundle documentation](https://docs.brew.sh/Brew-Bundle-and-Brewfile).
 
+### Current AI-tool selections
+
+| Tool | Current decision | Reinstall/update treatment |
+| --- | --- | --- |
+| pi | In use now; retain the existing npm installation, inspected version 1.5.0 | May be removed later. Do not uninstall, automatically migrate or add to the default common set. Its existing install is not a newly locked deployment |
+| qwen-code | Homebrew 0.26.8 uninstalled at the user's request | Excluded from reinstall targets. Preserve the user's saved data; retain shared Node/ripgrep dependencies |
+| GSD | Currently unused | Excluded from the initial reinstall set; cleanup remains a separate task |
+
+The inventory counts above describe the snapshot before qwen-code removal.
+After removal, the installed formula count is 169. Removal was limited to the
+qwen-code formula, with automatic dependency removal disabled. The existing pi
+entrypoint and the qwen saved-data contents/metadata were verified unchanged.
+
 ## Minimal runtimes and controlled installation
 
 The reinstall set is an explicit selection, not an automatic import of installed

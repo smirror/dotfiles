@@ -10,6 +10,14 @@ These are the initial reinstall targets in `home.nix`, not a dump of everything
 installed on one machine. They use the existing Nixpkgs/Home Manager revisions
 and source hashes in `flake.lock`; update and validate that lock deliberately.
 
+The default version policy is the latest stable upstream release at installation
+or update time, resolved to exact revisions/hashes before execution. Routine
+reinstallation uses the recorded lock/digests rather than resolving a moving
+latest reference again. Prereleases and compatibility/security exceptions need
+an explicit decision. A pin is a reproducible snapshot, not a permanent freeze.
+If the approved package source lags upstream, record that gap before choosing a
+new pin or an exception; do not silently describe the older version as latest.
+
 | Tools | Purpose | Installer | Version policy |
 | --- | --- | --- | --- |
 | `git`, `gh`, `ghq`, `lazygit` | Git operations, GitHub and repository navigation | Nix | Fixed by the lock |
@@ -103,7 +111,7 @@ the same desired CLI list in both managers. See [Homebrew Bundle documentation](
 
 | Tool | Current decision | Reinstall/update treatment |
 | --- | --- | --- |
-| pi | In use now; retain the existing npm installation, inspected version 1.5.0 | May be removed later. Do not uninstall, automatically migrate or add to the default common set. Its existing install is not a newly locked deployment |
+| pi | In use now; retain the existing npm installation, inspected version 1.5.0 | May be removed later. Future reviewed updates should select the latest stable release. Do not automatically migrate or add to the default common set. The inspected version is a snapshot, not a permanent target or newly locked deployment |
 | qwen-code | Homebrew 0.26.8 uninstalled at the user's request | Excluded from reinstall targets. Preserve the user's saved data; retain shared Node/ripgrep dependencies |
 | GSD | Currently unused | Excluded from the initial reinstall set; cleanup remains a separate task |
 
@@ -180,9 +188,11 @@ by this work. Unreviewed manifest or lock edits must not authorize their own
 execution; avoid automatically running newly downloaded packages or scripts.
 
 Updates should be small reviewed definition/lock changes followed by relevant
-version and startup checks. Known vulnerability fixes also need updates; a
-permanent freeze is not the security policy. Do not silently track latest
-releases or add self-updating installers to the selected set.
+version and startup checks. Check the official stable release and known security
+issues before selecting a new version. Known vulnerability fixes also need
+updates. Use latest stable as the selection policy, then pin the selected
+version and source before execution; do not silently follow moving tags or
+add self-updating installers to the selected set.
 
 ## macOS developer tools
 

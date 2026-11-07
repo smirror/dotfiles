@@ -4,7 +4,7 @@
 
 One `home.nix` is used for macOS and WSL. `scripts/home-manager.sh` selects the OS/CPU target and supplies the current username/home as `DOTFILES_USER` and `DOTFILES_HOME`. The declarations do not contain a specific person's absolute home path.
 
-- Nix installs the CLI packages listed in `home.nix`; standard GNU tools cover the existing helpers' GNU-specific options on both platforms.
+- The independent `packages.<system>.tools` output installs the list in `tool-packages.nix` plus Fish. It does not deploy home files. Standard GNU tools cover the helpers' GNU-specific options.
 - The standard Home Manager Fish module installs Fish and generates `~/.config/fish/config.fish` from the existing shell initialization. It also generates its session-variable integration. The Nix profile precedes other package managers on PATH.
 - Only the 23 helper/completion/conf.d files explicitly listed in `home.nix` are managed. Directory-wide links are not used.
 - `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` use the same `agents/global.md`; this preserves the existing graphify instruction with its installed shared Skill path.
@@ -79,3 +79,13 @@ features through `NIX_CONFIG`, retaining any caller configuration. The build
 and activation results above are from the corrected wrapper. Host Nix settings
 were not edited. Interactive key selection under the Nix-built shell remains
 part of native acceptance; startup checks do not stand in for that test.
+
+### Current acceptance boundary
+
+The snapshot above predates the tools/configuration split. New tools-only profile
+installation, lock updates, native builds and activation/restoration checks must
+be performed on a different PC, not the current working machine. Local syntax
+checks and fake-executor tests are not physical acceptance evidence. The split
+keeps `home-manager.sh switch` explicit and removes the common CLI list from
+Home Manager's configuration deployment; Fish/Home Manager retain their module
+runtime dependencies. No source edit here changes the current live settings.

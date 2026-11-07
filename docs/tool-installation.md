@@ -2,11 +2,12 @@
 
 The first target is a selected tool set that can be installed again. Prompt
 management remains a later task. LazyVim's personal configuration, work/doctor
-commands, CI and Skill cleanup are outside this change.
+commands, build/test CI and Skill cleanup are outside this change. Daily update
+proposals are handled separately by the Dependabot definition.
 
 ## Selected shared tools
 
-These are the initial reinstall targets in `home.nix`, not a dump of everything
+These are the initial reinstall targets in `tool-packages.nix`, not a dump of everything
 installed on one machine. They use the existing Nixpkgs/Home Manager revisions
 and source hashes in `flake.lock`; update and validate that lock deliberately.
 
@@ -28,27 +29,46 @@ new pin or an exception; do not silently describe the older version as latest.
 | `fzf`, `peco` | Existing shell selection helpers | Nix | Fixed by the lock |
 | `starship` | Shell prompt | Nix | Fixed by the lock |
 | `coreutils`, `findutils`, `gawk`, `getopt`, `gnugrep`, `gnused`, `perl` | Portable helper dependencies and GNU options | Nix | Fixed by the lock |
-| Fish, Home Manager | Shell and existing deployment mechanism | Home Manager modules | Fixed by the lock |
+| Fish | Shell included in the tools bundle | Nix | Fixed by the lock |
+| Home Manager | Optional configuration deployment only | Separate flake output / module | Fixed by the lock |
 
-There are 20 explicit packages plus the two module-provided programs. Git,
+The tools bundle contains 20 explicit packages plus Fish. Home Manager remains
+a separate configuration-deployment entrypoint. Git,
 GitHub CLI, Tmux, jq and Neovim are new declarations in this change. Adding
 their binaries does not add ownership of their settings, authentication or
 saved data. Existing Brew installations are retained.
 
 ## First validation and subsequent installation
 
-With Nix available, use the existing commands:
+All installation/update/build/activation acceptance below is for the other,
+designated validation PC. Do not exercise it on the current working PC.
+
+The tools output does not import `home.nix` and needs no user/home identity:
 
 ```sh
-./scripts/home-manager.sh check
-./scripts/home-manager.sh build
+nix --extra-experimental-features 'nix-command flakes' build --no-update-lock-file .#tools --out-link result-tools
 ```
 
-Inspect `result/home-path/bin` to test the selected binaries without activating
-the managed configuration. `scripts/home-manager.sh switch` also applies the
-existing Fish/global-instruction file declarations; it is not a tools-only
-installer. Follow [the migration procedure](nix-migration.md) before using it.
-No host switch is part of this tool-list update.
+After reviewing it on that other PC, a first tools-only installation uses a
+dedicated profile, leaving the default profile and managed settings separate:
+
+```sh
+mkdir -p "$HOME/.local/state/nix/profiles"
+nix --extra-experimental-features 'nix-command flakes' profile add --no-update-lock-file \
+    --profile "$HOME/.local/state/nix/profiles/dotfiles-tools" --name dotfiles-tools .#tools
+```
+
+Use `profile upgrade` for the existing named entry after a reviewed repository
+update; do not repeatedly add another copy or change its priority to hide a
+collision. Add that profile's bin directory to the chosen shell's PATH as a
+separate configuration step. The tracked Fish configuration prefers it when
+present; the existing live Fish configuration has not been changed.
+
+Configuration deployment is separately selected with `home-manager.sh`.
+Its Fish/Home Manager modules retain their required runtime packages, but the
+common 20-tool list is no longer installed by `home.nix`. A configuration switch
+is not part of a tools-only install/update. Follow the [migration procedure](nix-migration.md)
+before any such switch. The new split has not been physically tested here.
 
 Nix takes command precedence after activation. On the inspected machine,
 Git changes from Apple Git 2.54.0 to Nix Git 2.56.0, and jq from Apple's 1.7.1
@@ -94,7 +114,8 @@ are not copied into the top-level declaration automatically.
 | Rust and global Cargo tools | Cargo is currently used to install tools; preserve rustup/Cargo and local sources | Prefer locked tool packages; Rust development remains opt-in |
 | Go and Go tools | Existing installation retained; currently unused | Excluded from the default reinstall set; add only when requested |
 | AI clients and external Skills | Existing native, Brew, npm and uv installers | Record required clients and exact sources; GSD is currently unused and excluded from the initial reinstall set |
-| macOS applications, fonts and TeX | Current installers, including Brew casks | Curate a Brewfile after choosing the wanted applications; do not export all dependencies or start services |
+| macOS applications | Current installers retained | Record candidates, install methods and official sources in [the app catalog](macos-apps.md); do not automatically enroll all installed apps |
+| Fonts and TeX templates | Outside this repository | Excluded; do not copy font/template assets into the public repository. Existing TeX runtimes remain untouched |
 | Specialist tools and local services | Current installers and existing data | Confirm need and preserve data; no service/database operations are performed here |
 | Apple developer tools | Existing selected Xcode/Command Line Tools | macOS-only selection below; no automatic installation or switching |
 
@@ -221,3 +242,27 @@ not a tested unattended Xcode installer.
 
 See [Apple's downloads](https://developer.apple.com/xcode/resources/) and
 [Xcode/macOS compatibility](https://developer.apple.com/xcode/system-requirements).
+
+## Update proposals and manual updates
+
+Dependabot is configured to check the Nix inputs every day at 09:00 Asia/Tokyo
+and group the two input changes into one PR, with at most one open version-update
+PR. No auto-merge or host installation is configured. This does not audit every
+CLI inside Nixpkgs for vulnerabilities or replace execution checks on the other PC.
+The configuration becomes active only after it reaches the default branch and
+GitHub accepts it; no hosted run has been confirmed yet.
+
+`flake.nix` identifies the approved tracking branches; `flake.lock` still fixes
+the reviewed revisions and source hashes. Only the original-ref metadata changed
+in this work; locked revisions/hashes have not been upgraded. Dependabot updates
+`flake.lock`, but does not upgrade pinned refs written directly in `flake.nix`.
+See [GitHub's Nix support](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories#nix).
+
+For a manual batch proposal on the other PC, `scripts/update-lock.sh` updates the
+lock only. It refuses existing staged or unstaged flake edits and does not install,
+activate, commit or push. Review the resulting diff and validate there before
+applying the tools profile. This script was exercised only with a fake Nix
+executor in temporary repositories on this PC, never with real Nix.
+
+Kali/Parrot toolboxes are a later opt-in definition; see the [security environment plan](security-environments.md).
+They are not included in the common tool profile.

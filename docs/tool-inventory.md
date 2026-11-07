@@ -8,15 +8,16 @@ been inventoried or tested. Raw machine/package-manager output stays outside Git
 
 ## Current declaration
 
-`home.nix` explicitly lists 20 packages:
+`tool-packages.nix` explicitly lists 20 packages for the independent tools output:
 
 ```
 bat coreutils fd findutils fzf gawk getopt gh ghq git gnugrep gnused
 jq lazygit neovim peco perl ripgrep starship tmux
 ```
 
-The Fish and Home Manager modules install their respective programs as well:
-22 direct components in total, excluding dependencies and the Nix bootstrap.
+The tools bundle also includes Fish (21 programs total); Home Manager is a
+separate configuration entrypoint. Its configuration no longer installs the
+common package list. Dependencies and the Nix bootstrap are counted separately.
 The first draft had 13 explicit packages; fd/lazygit raised that to 15.
 This update adds Git, gh, tmux, jq and Neovim. No tool is installed on the live machine.
 The [reinstall targets](tool-installation.md) record purpose, ownership and version policy.
@@ -180,3 +181,14 @@ evaluation and an arm64 Linux build passed. The five binaries started from the
 built tool environment; jq processed a fixture and Neovim started headless with
 LuaJIT using no user init, plugins or history. This does not test native macOS or
 WSL execution and does not apply any host configuration.
+
+## Split deployment follow-up
+
+Tool installation and configuration activation now have independent entrypoints.
+The current working PC is excluded from real installation/update acceptance;
+validation belongs on another PC. The older successful container results above
+do not validate the new split. Current checks cover syntax and a fake Nix
+executor only. The existing locked package versions remain unchanged.
+
+Font assets and TeX templates are excluded. [Application candidates and official
+install routes](macos-apps.md) are recorded without executing any app installers.

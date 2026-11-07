@@ -13,29 +13,32 @@ Personal dotfiles configuration for development environment.
 
 The shared environment is declared in `flake.nix` and `home.nix`. Both macOS and WSL use the same declarations and commands; only OS/CPU detection and local user/home values differ. nix-darwin, NixOS and Ansible are not required.
 
-- `home.nix` installs the declared CLI tools and Fish, and manages an explicit list of Fish helper files.
+- `tool-packages.nix` defines the CLI list; `packages.<system>.tools` installs it with Fish independently of home settings.
+- `home.nix` manages the optional Fish/global-instruction deployment. Its Fish/Home Manager modules retain their own required runtime packages.
 - Codex and Claude Code share `agents/global.md`. Existing external Skills keep their current installer ownership.
 - Git/Tmux settings, `fish_variables`, histories, credentials and client permission settings are outside this migration.
 - Home Manager normally links managed files into the Nix store; an identical existing regular file may be left in place. Parent directories and unrelated local files stay outside its ownership.
 
 See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. Fish and ripgrep match the inspected machine's versions. Intel Macs are outside the supported scope.
 
-### Prepare and build
+### Prepare and build on the other validation PC
 
 The initial shell script installs a pinned, checksum-verified official Nix release if Nix is absent. On macOS this adds the Nix volume, build users and daemon; review [the migration procedure](docs/nix-migration.md) before running it. It does not switch the login shell or apply Home Manager.
 
 ```sh
 ./scripts/bootstrap.sh
 # Open a new shell after Nix installation.
-./scripts/home-manager.sh check   # evaluate all three declared OS/CPU targets
-./scripts/home-manager.sh build   # build the current target; do not activate it
+nix --extra-experimental-features 'nix-command flakes' build --no-update-lock-file .#tools --out-link result-tools
+# Optional, separate configuration generation:
+./scripts/home-manager.sh check
+./scripts/home-manager.sh build
 ```
 
 `DOTFILES_USER` and `DOTFILES_HOME` default to the current user and home directory. The same shared declaration handles `aarch64-darwin`, `aarch64-linux` and `x86_64-linux`. Explicit overrides are intended for isolated evaluation/build tests, not another person's live home.
 
 Nixpkgs and Home Manager use pinned development revisions with a committed `flake.lock`. Review these inputs together when updating them. `home.stateVersion` stays at `26.05`; it controls configuration compatibility, not the package release. A syntax check alone is not Nix evaluation or a successful build.
 
-### Review and activate
+### Review and activate on the other validation PC
 
 Inspect `result/home-files`, compare every managed destination and prepare the backups described in [the migration procedure](docs/nix-migration.md). Existing differing files cause a collision; there is no automatic forced overwrite.
 
@@ -89,7 +92,7 @@ Features:
 
 See the [selected reinstall targets and installer ownership](docs/tool-installation.md) for the initial tool set, version policy and optional new-machine LazyVim initialization.
 
-The Nix declaration currently contains 20 explicit CLI packages plus Fish and Home Manager. This includes Git, gh, tmux, jq and Neovim; their existing settings remain outside the added package ownership. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
+The tools bundle contains 20 explicit CLI packages plus Fish. Home Manager is a separate configuration entrypoint. This includes Git, gh, tmux, jq and Neovim; their existing settings remain outside the added package ownership. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
 
 The current editor is Neovim + LazyVim. Its existing configuration remains separately managed; the retired SpaceVim configuration has been removed.
 
@@ -147,3 +150,14 @@ dotfiles/
 
 MIT License - see LICENSE file for details.
 
+
+## Update proposals and optional applications
+
+Dependabot is defined to propose Nix lock updates daily, without auto-merge or
+installation on any host. `scripts/update-lock.sh` prepares a manual lock update
+on the other PC; it never installs or activates. Current locked revisions remain
+unchanged. See the [update/deployment policy](docs/tool-installation.md).
+
+[macOS application candidates](docs/macos-apps.md) record possible installers and
+official links. Fonts and TeX templates are excluded. [Kali/Parrot environments](docs/security-environments.md)
+remain optional isolated toolboxes, with no host security-tool installation.

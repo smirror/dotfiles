@@ -1,91 +1,77 @@
-# Nix migration boundaries and restoration
+# Nix移行の対象範囲と復元手順
 
-## Declared scope
+## 管理対象
 
-One `home.nix` is used for macOS and WSL. `scripts/home-manager.sh` selects the OS/CPU target and supplies the current username/home as `DOTFILES_USER` and `DOTFILES_HOME`. The declarations do not contain a specific person's absolute home path.
+macOSとWSLで一つの `home.nix` を使います。`scripts/home-manager.sh` がOS・CPUを選び、現在のユーザー名・ホームディレクトリを `DOTFILES_USER` と `DOTFILES_HOME` に渡します。定義に特定個人の絶対ホームパスは含めません。
 
-- The independent `packages.<system>.tools` output installs the list in `tool-packages.nix` plus Fish. It does not deploy home files. Standard GNU tools cover the helpers' GNU-specific options.
-- The standard Home Manager Fish module installs Fish and generates `~/.config/fish/config.fish` from the existing shell initialization. It also generates its session-variable integration. The Nix profile precedes other package managers on PATH.
-- Only the 23 helper/completion/conf.d files explicitly listed in `home.nix` are managed. Directory-wide links are not used.
-- `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` use the same `agents/global.md`; this preserves the existing graphify instruction with its installed shared Skill path.
-- Git/Tmux settings, Fish runtime variables, histories, sessions, API keys, external Skill directories and client permission/configuration files are excluded. The existing broken Linux `br.fish` link is excluded.
+- 独立した `packages.<system>.tools` は、`tool-packages.nix` の一覧とFishを導入します。ホーム内の設定ファイルは配置しません。ヘルパーが使うGNU固有のオプションは標準のGNUツールで扱います。
+- Home Manager標準のFishモジュールはFishを導入し、既存のシェル初期化処理から `~/.config/fish/config.fish` を生成します。セッション変数の連携も生成します。PATHではNixのプロファイルが他のパッケージ管理ツールより優先されます。
+- `home.nix` に明示した23のヘルパー・補完・conf.dファイルだけを管理します。ディレクトリ全体のリンクは使いません。
+- `~/.codex/AGENTS.md` と `~/.claude/CLAUDE.md` は同じ `agents/global.md` を使い、導入済み共通Skillへのパスを含む既存のgraphify指示を維持します。
+- Git・Tmuxの設定、Fishの実行時変数、履歴、セッション、APIキー、外部Skillディレクトリ、クライアントの権限・設定ファイルは対象外です。既存の壊れたLinux用 `br.fish` リンクも除外します。
 
-The Nix source and store are not a place for secrets. Do not add live runtime/authentication files to the repository or interpolate secret environment values into these declarations. External graphify installation and other externally distributed Skills remain separate prerequisites.
+Nixのソースやstoreには秘密情報を置きません。実機の実行時データ・認証ファイルをリポジトリへ追加したり、秘密の環境変数を定義へ埋め込んだりしないでください。graphifyなど、外部配布のSkillsは別途導入済みであることが前提です。
 
-## Before installing Nix
+## Nix導入前の確認
 
-`scripts/bootstrap.sh` is a new, explicit installation step. It does not run either legacy setup script. Its pinned installer is verified before execution. The official macOS installer creates a `/nix` APFS volume, build users and daemon and changes system shell initialization; this is broader than applying files in the home directory. On Linux it uses daemon mode when systemd is running, or single-user mode otherwise.
+`scripts/bootstrap.sh` は新たに用意した、明示的な導入手順です。旧setupスクリプトは実行しません。固定済みのインストーラーを検証してから実行します。公式macOSインストーラーは `/nix` のAPFSボリューム、ビルド用ユーザー、デーモンを作成し、システムのシェル初期化を変更します。ホーム内のファイル配置より広い変更です。Linuxではsystemdが稼働していればデーモンモード、それ以外はシングルユーザーモードを使います。
 
-Review the official installer's proposed changes and its [uninstall documentation](https://nix.dev/manual/nix/2.35/installation/uninstall.html) before permitting this step. A Home Manager rollback does not uninstall the Nix daemon or remove its volume. Preserve the installer's backups and record its actual changes; do not overwrite existing system backups.
+実行を許可する前に、公式インストーラーの変更予定と[アンインストール手順](https://nix.dev/manual/nix/2.35/installation/uninstall.html)を確認します。Home Managerをロールバックしても、Nixデーモンやボリュームは削除されません。インストーラーのバックアップを保持して実際の変更を記録し、既存のシステムバックアップを上書きしないでください。
 
-## Verification gates
+## 検証の段階
 
-1. Run the isolated Python tests and syntax checks. Fake installer/Nix executors prove routing and failure handling only.
-2. Review the [tool/version inventory](tool-inventory.md), then with a real Nix runtime, run `scripts/home-manager.sh check`. Each of the three `homeConfigurations` must actually evaluate. This is not a cross-OS execution test.
-3. Review the generated `flake.lock`, then build the native activation package with `scripts/home-manager.sh build`. Inspect the generated `result/home-files`, including the Home Manager-generated files beyond the explicitly imported sources.
-4. Build for a disposable home and test activation there, with separate HOME/XDG/profile state. Verify normal shell startup, declared binaries, keys, candidate cancellation and missing-history handling. Activation in macOS and WSL must be recorded separately.
-5. Before live activation, compare every generated destination, capture file contents/link targets/owners/modes and current Home Manager/Nix profile targets, and agree which existing files may be moved aside. Stop on unrecognized paths or concurrent edits.
+1. 隔離したPythonテストと構文検査を実行します。代替インストーラー・Nixプログラムで確認できるのは、呼び出し先と失敗時の処理だけです。
+2. [ツール・バージョンの棚卸し](tool-inventory.md)を確認し、実際のNixで `scripts/home-manager.sh check` を実行します。三つの `homeConfigurations` がすべて評価できる必要があります。これは各OSでの実行試験ではありません。
+3. 生成された `flake.lock` を確認し、`scripts/home-manager.sh build` で実行環境向けの反映用パッケージをビルドします。`result/home-files` を確認し、明示的に取り込んだソースだけでなく、Home Manager自身が生成したファイルも確認します。
+4. HOME・XDG・プロファイルの状態を分離した使い捨てホーム向けにビルドし、そこで反映を試します。通常のシェル起動、定義済みコマンド、キー操作、候補選択のキャンセル、履歴がない場合の動作を確認します。macOSとWSLの反映結果は別々に記録します。
+5. 使用中の環境へ反映する前に、生成された配置先をすべて比較します。ファイル内容、リンク先、所有者、モード、現在のHome Manager・Nixプロファイルの参照先を記録し、退避可能な既存ファイルを決めます。未確認のパスや並行編集が見つかったら停止します。
 
-Do not describe `home-manager switch -n` or `DRY_RUN=1` as a no-write guarantee. Home Manager's initialization/profile work can occur before the file-write checks. Even an activation collision can occur after the Home Manager profile has been updated.
+`home-manager switch -n` や `DRY_RUN=1` を、書き込みが発生しない保証として扱わないでください。ファイル書き込みの検査より前に、Home Managerの初期化・プロファイル処理が走る場合があります。配置先の競合で停止する場合も、すでにHome Managerプロファイルが更新されている可能性があります。
 
-## Backups and first activation
+## バックアップと初回反映
 
-Use a private backup directory outside Git and the Nix source tree. Back up only the reviewed destination allowlist, preserving symlinks, owners and modes. Record absent targets too, so newly created links can be distinguished during restoration. Do not copy runtime credentials just to back up unrelated configuration files.
+GitとNixソースの外に、非公開のバックアップディレクトリを用意します。確認済みの配置先一覧だけを対象に、リンク、所有者、モードを保ってバックアップします。存在しない配置先も記録し、新規作成されたリンクを復元時に識別できるようにします。無関係な設定のバックアップのために、実行時の認証情報までコピーしないでください。
 
-Home Manager refuses differing existing files by default. An identical regular file may remain a regular file instead of being replaced by a link. Do not set `force = true`, `HOME_MANAGER_BACKUP_OVERWRITE`, or use blanket deletion to bypass a collision. Its `-b` backup mechanism is not a general backup of existing symlinks. Resolve only the reviewed conflicting destinations using the prepared backups.
+Home Managerは、内容の異なる既存ファイルを既定で拒否します。同一内容の通常ファイルは、リンクに置き換えずそのまま残る場合があります。競合回避のために `force = true`、`HOME_MANAGER_BACKUP_OVERWRITE`、一括削除を使わないでください。`-b` によるバックアップも、既存リンク全般のバックアップではありません。用意したバックアップを使い、確認済みの競合先だけを解決します。
 
-Run `scripts/home-manager.sh switch` only after the build, destination diff, backups and profile changes are accepted. It does not change the account's login shell; validate the installed Fish explicitly before considering a separate login-shell change.
+ビルド、配置先の差分、バックアップ、プロファイル変更を確認してから `scripts/home-manager.sh switch` を実行します。アカウントのログインシェルは変更しません。ログインシェルの変更を別途検討する前に、導入したFishを明示的に検証します。
 
-## Restoration
+## 復元
 
-- Record the previous Nix and Home Manager profile targets before activation. Restore their previous generation if a switch failed or the new environment is rejected; do not assume a failed activation left profiles untouched.
-- For the first migration, there may be no previous Home Manager generation. Remove only links still pointing to the reviewed generated files, then restore the backed-up files/links with their original modes/ownership. Preserve any new local edits for comparison first.
-- Remove newly generated files only if they were absent before and still match the recorded managed generation. Leave runtime files and unrelated directories intact.
-- Start a new shell and verify the original command paths, Fish behavior, global agent instructions and unchanged Git/Tmux links.
-- Removing Nix itself is a separate system operation governed by the actual installer records and official uninstall procedure. Home-directory restoration alone does not revert it.
+- 反映前にNixとHome Managerのプロファイル参照先を記録します。切り替え失敗時や新環境を採用しない場合は、前の世代へ戻します。反映失敗ならプロファイルも未変更だとは仮定しません。
+- 初回移行では、以前のHome Manager世代が存在しない場合があります。確認済みの生成ファイルをまだ指しているリンクだけを削除し、元の所有者・モードを保ってバックアップからファイル・リンクを戻します。新しいローカル編集は、先に比較用として保持します。
+- 新規生成ファイルを削除するのは、反映前には存在せず、かつ記録した管理世代と現在も一致する場合だけです。実行時ファイルや無関係なディレクトリは残します。
+- 新しいシェルを起動し、元のコマンドのパス、Fishの動作、グローバルエージェント指示、Git・Tmuxのリンクが復元・維持されていることを確認します。
+- Nix自体の削除は別のシステム操作です。実際のインストーラー記録と公式の削除手順に従います。ホーム内を復元しただけでは元に戻りません。
 
-## Evidence status
+## 検証記録の扱い
 
-Record syntax, fake-executor tests, real evaluation, native build, isolated activation and live activation separately. Do not commit or push this migration until its diff has been reviewed. Do not report a macOS build as WSL execution evidence, or a local branch as a merged/pushed change.
+構文検査、代替プログラムによるテスト、実際の評価、実行環境向けビルド、隔離環境への反映、使用中の環境への反映を区別して記録します。差分確認前に、この移行をコミット・pushしないでください。macOSのビルドをWSLでの実行の証拠にしたり、ローカルブランチをマージ・push済みと報告したりしないでください。
 
-### Validated snapshot: 2026-11-07
+<a id="validated-snapshot-2026-11-07"></a>
 
-The committed lock uses Nixpkgs `6dadaf4375be35033e1c84395adbd53ff5fded96`
-and Home Manager `b787c48e2ec57a9d098f5c2721882a3bc1e16f97`.
-Intel Mac is excluded from the supported scope. Both scripts reject it before
-running installation/evaluation commands; arm64 and x86_64 Linux remain supported.
+### 検証済みスナップショット：2026-11-07
 
-Validation used an isolated container from `nixos/nix:2.35.4`, image digest
-`sha256:f159a58f390677f41e8e900a74b6e2f9c7f27b364122ae6acf7a652ce6c551c0`.
-No host home or credentials were mounted into it.
+コミット済みのlockは、Nixpkgs `6dadaf4375be35033e1c84395adbd53ff5fded96` とHome Manager `b787c48e2ec57a9d098f5c2721882a3bc1e16f97` を使います。Intel Macは対応対象外です。二つのスクリプトは導入・評価コマンドの実行前にIntel Macを拒否します。arm64・x86_64 Linuxは引き続き対応します。
 
-| Check | Result |
+検証には `nixos/nix:2.35.4` の隔離コンテナを使いました。イメージのdigestは `sha256:f159a58f390677f41e8e900a74b6e2f9c7f27b364122ae6acf7a652ce6c551c0` です。ホストのホームや認証情報はマウントしていません。
+
+| 検査 | 結果 |
 | --- | --- |
-| Python regression suite | 30 passed, including Intel Mac rejection and child-process feature inheritance |
-| Real Nix evaluation | All three declared profiles passed |
-| Native build | arm64 Linux Home Manager generation passed |
-| Collision protection | A differing existing instruction file blocked activation and remained intact |
-| Disposable-home activation | Passed after explicit backup of the conflicting fixture |
-| Fresh Fish startup | Required binaries, runtime fixture value, helper loading and PATH uniqueness passed; sourcing again kept PATH unique |
-| Global instruction deployment | Codex/Claude files both linked to the reviewed common source |
-| First-activation restoration | Restored the original instruction fixture, removed the new file/profile links and retained the runtime fixture |
-| Native macOS build/activation | Not run |
-| WSL runtime acceptance | Not run; Linux container execution is not WSL evidence |
-| Live host activation | Not run |
+| Python回帰テスト | Intel Macの拒否と子プロセスへの機能設定の継承を含め、30件成功 |
+| 実際のNix評価 | 定義した三つのプロファイルすべて成功 |
+| 実行環境向けビルド | arm64 LinuxのHome Manager世代の生成に成功 |
+| 競合保護 | 内容の異なる既存指示ファイルによって反映を停止し、既存ファイルを維持 |
+| 使い捨てホームへの反映 | 競合するテスト用ファイルを明示的にバックアップした後に成功 |
+| 新しいFishの起動 | 必要コマンド、実行時のテスト値、ヘルパー読込、PATH重複不在を確認。再読込後もPATHの重複なし |
+| グローバル指示の配置 | Codex・Claudeのファイルが、確認済みの共通ソースを参照 |
+| 初回反映からの復元 | 元の指示ファイルを復元し、新規ファイル・プロファイルのリンクを削除。実行時のテスト値は維持 |
+| macOS上のビルド・反映 | 未実行 |
+| WSLでの動作確認 | 未実行。Linuxコンテナの実行はWSLでの証拠ではない |
+| 使用中のホストへの反映 | 未実行 |
 
-The real build exposed a wrapper issue: outer `nix run` feature flags did not
-reach Home Manager's child Nix process. The wrapper now exports the required
-features through `NIX_CONFIG`, retaining any caller configuration. The build
-and activation results above are from the corrected wrapper. Host Nix settings
-were not edited. Interactive key selection under the Nix-built shell remains
-part of native acceptance; startup checks do not stand in for that test.
+実際のビルドで、外側の `nix run` に渡した機能フラグが、Home Managerの子Nixプロセスへ届かない問題が見つかりました。ラッパーは現在、呼び出し元の設定を保持しつつ、必要な機能を `NIX_CONFIG` で渡します。上記のビルド・反映結果は修正後のラッパーによるものです。ホストのNix設定は編集していません。Nixでビルドしたシェルの対話的なキー選択は、実環境での確認事項として残ります。起動確認で代替しません。
 
-### Current acceptance boundary
+### 現在の検証範囲
 
-The snapshot above predates the tools/configuration split. New tools-only profile
-installation, lock updates, native builds and activation/restoration checks must
-be performed on a different PC, not the current working machine. Local syntax
-checks and fake-executor tests are not physical acceptance evidence. The split
-keeps `home-manager.sh switch` explicit and removes the common CLI list from
-Home Manager's configuration deployment; Fish/Home Manager retain their module
-runtime dependencies. No source edit here changes the current live settings.
+上記の記録は、ツール導入と設定反映を分離する前のものです。新しいツール専用プロファイルの導入、lock更新、実環境向けビルド、反映・復元の確認は、現在の作業用PCではなく別PCで行います。ローカルの構文検査と代替プログラムによるテストは、実環境での動作確認の証拠ではありません。分離後も `home-manager.sh switch` による反映は明示的な操作とし、共通CLI一覧をHome Managerの設定反映から外しています。Fish・Home Managerのモジュールに必要な実行時パッケージは残します。今回のソース編集で、使用中の設定は変わりません。

@@ -1,71 +1,57 @@
-# macOS application installation candidates
+# macOSアプリの導入候補
 
-This is an inventory of possible reinstall routes, not a default installation list.
-No application, installer or update has been executed on this PC by this work.
-Fonts and TeX templates are excluded. Application binaries, fonts, licenses and
-account data are not stored in this repository. Latest stable is selected at
-a reviewed update; a cask name alone is not an exact historical-version lock.
+再導入方法の候補を整理したもので、既定のインストール一覧ではありません。この作業で現在のPC上のアプリ、インストーラー、更新処理は実行していません。フォントとTeXテンプレートは対象外です。アプリ本体、フォント、ライセンス、アカウントデータはリポジトリに保存しません。確認した更新時点の最新安定版を選びますが、cask名だけでは過去の特定バージョンを固定できません。
 
-## Catalogued cask routes
+## caskで導入できる候補
 
-Homebrew catalog metadata lists these stable cask candidates and vendor homepages.
-Names alone do not verify product identity; match the bundle/vendor before enrollment.
-No Brewfile has been activated and installer placement has not been tested on another PC.
+Homebrewのカタログ情報に基づく安定版caskの候補と、配布元のサイトです。名前だけでは同じ製品か確認できないため、導入対象に加える前にバンドル情報・配布元を照合します。Brewfileによる反映や、別PCでのインストーラーによる配置確認は未実施です。
 
-| Application | Candidate cask | Official/vendor homepage from catalog |
+| アプリ | cask候補 | カタログに記載された公式・配布元サイト |
 | --- | --- | --- |
-| VLC | `vlc` | [Vendor](https://www.videolan.org/vlc/) |
-| Antigravity | `antigravity` | [Vendor](https://antigravity.google/product/antigravity-2) |
-| Simple Comic | `simple-comic` | [Vendor](https://github.com/MaddTheSane/Simple-Comic) |
-| Claude | `claude` | [Vendor](https://claude.com/download) |
-| TradingView | `tradingview` | [Vendor](https://www.tradingview.com/desktop/) |
-| Raycast | `raycast` | [Vendor](https://raycast.com/) |
-| Steam | `steam` | [Vendor](https://store.steampowered.com/about/) |
-| Google Chrome | `google-chrome` | [Vendor](https://www.google.com/chrome/) |
-| Spotify | `spotify` | [Vendor](https://www.spotify.com/) |
-| PyCharm | `pycharm` | [Vendor](https://www.jetbrains.com/pycharm/) |
-| Scroll Reverser | `scroll-reverser` | [Vendor](https://pilotmoon.com/scrollreverser/) |
-| RustRover | `rustrover` | [Vendor](https://www.jetbrains.com/rust/) |
-| Docker | `docker-desktop` | [Vendor](https://www.docker.com/products/docker-desktop) |
-| Obsidian | `obsidian` | [Vendor](https://obsidian.md/) |
-| KeyClu | `keyclu` | [Vendor](https://sergii.tatarenkov.name/apps/keyclu/) |
-| Thunderbird | `thunderbird` | [Vendor](https://www.thunderbird.net/en-US/) |
-| Antigravity IDE | `antigravity-ide` | [Vendor](https://antigravity.google/product/antigravity-ide) |
-| iTerm | `iterm2` | [Vendor](https://iterm2.com/) |
-| Firefox | `firefox` | [Vendor](https://www.mozilla.org/firefox/) |
-| AltTab | `alt-tab` | [Vendor](https://alt-tab.app/) |
-| Postman | `postman` | [Vendor](https://www.postman.com/) |
-| JetBrains Toolbox | `jetbrains-toolbox` | [Vendor](https://www.jetbrains.com/toolbox-app/) |
-| Ollama | `ollama-app` | [Vendor](https://ollama.com/) |
-| Discord | `discord` | [Vendor](https://discord.com/) |
+| VLC | `vlc` | [配布元](https://www.videolan.org/vlc/) |
+| Antigravity | `antigravity` | [配布元](https://antigravity.google/product/antigravity-2) |
+| Simple Comic | `simple-comic` | [配布元](https://github.com/MaddTheSane/Simple-Comic) |
+| Claude | `claude` | [配布元](https://claude.com/download) |
+| TradingView | `tradingview` | [配布元](https://www.tradingview.com/desktop/) |
+| Raycast | `raycast` | [配布元](https://raycast.com/) |
+| Steam | `steam` | [配布元](https://store.steampowered.com/about/) |
+| Google Chrome | `google-chrome` | [配布元](https://www.google.com/chrome/) |
+| Spotify | `spotify` | [配布元](https://www.spotify.com/) |
+| PyCharm | `pycharm` | [配布元](https://www.jetbrains.com/pycharm/) |
+| Scroll Reverser | `scroll-reverser` | [配布元](https://pilotmoon.com/scrollreverser/) |
+| RustRover | `rustrover` | [配布元](https://www.jetbrains.com/rust/) |
+| Docker | `docker-desktop` | [配布元](https://www.docker.com/products/docker-desktop) |
+| Obsidian | `obsidian` | [配布元](https://obsidian.md/) |
+| KeyClu | `keyclu` | [配布元](https://sergii.tatarenkov.name/apps/keyclu/) |
+| Thunderbird | `thunderbird` | [配布元](https://www.thunderbird.net/en-US/) |
+| Antigravity IDE | `antigravity-ide` | [配布元](https://antigravity.google/product/antigravity-ide) |
+| iTerm | `iterm2` | [配布元](https://iterm2.com/) |
+| Firefox | `firefox` | [配布元](https://www.mozilla.org/firefox/) |
+| AltTab | `alt-tab` | [配布元](https://alt-tab.app/) |
+| Postman | `postman` | [配布元](https://www.postman.com/) |
+| JetBrains Toolbox | `jetbrains-toolbox` | [配布元](https://www.jetbrains.com/toolbox-app/) |
+| Ollama | `ollama-app` | [配布元](https://ollama.com/) |
+| Discord | `discord` | [配布元](https://discord.com/) |
 
-## Special or separately verified routes
+## 個別の判断・確認が必要な導入方法
 
-| Application | Route / decision | Official source |
+| アプリ | 方法・方針 | 公式情報 |
 | --- | --- | --- |
-| Orca (Stably AI) | Official release assets; reject the unrelated Plotly `orca` cask | [Official repository/releases](https://github.com/stablyai/orca) |
-| OpenAI desktop app | The local ChatGPT.app reports a Codex bundle ID; confirm the intended product before choosing an installer | Official product/installer identity still needs confirmation |
-| Kanary | Vendor distribution; pin and verify a selected asset before automation | [Official site](https://kanary.to/) |
-| Photomator | Mac App Store; account/license may be required | [Official site](https://www.pixelmator.com/photomator/) |
-| Karabiner-Elements | Vendor installer; system-extension/input permissions are separate user decisions | [Official site](https://karabiner-elements.pqrs.org/) |
-| Karabiner EventViewer / VirtualHID helper | Managed by the parent Karabiner distribution; do not enroll independently | [Parent project](https://karabiner-elements.pqrs.org/) |
-| Tailscale | Choose the macOS distribution deliberately; VPN/extension permissions remain separate | [Official downloads](https://tailscale.com/download/mac) |
-| RunCat Neo | Mac App Store route linked by the project | [Official repository](https://github.com/runcat-dev/RunCatNeo) |
-| World Monitor | Vendor/source release; verify macOS asset and integrity before automation | [Official repository](https://github.com/koala73/worldmonitor) |
-| Xcode | Apple distribution; version/macOS compatibility and sign-in handled separately | [Apple downloads](https://developer.apple.com/xcode/resources/) |
-| Safari / Apple apps | OS or Apple Store distribution; do not infer an unattended installer | [Apple](https://www.apple.com/) |
-| Burp Suite Community | Excluded from host reinstall selection; consider the isolated GUI/VM toolbox route | [Official product](https://portswigger.net/burp/communitydownload) |
+| Orca（Stably AI） | 公式リリースの配布物を使う。別製品であるPlotlyの `orca` caskは使わない | [公式リポジトリ・リリース](https://github.com/stablyai/orca) |
+| OpenAIのデスクトップアプリ | ローカルのChatGPT.appがCodexのバンドルIDを返すため、意図する製品を確認してからインストーラーを選ぶ | 公式製品とインストーラーの対応は要確認 |
+| Kanary | 配布元から取得する。自動化前に対象の配布物を固定・検証する | [公式サイト](https://kanary.to/) |
+| Photomator | Mac App Store。アカウント・ライセンスが必要な場合がある | [公式サイト](https://www.pixelmator.com/photomator/) |
+| Karabiner-Elements | 公式インストーラー。システム拡張・入力権限はユーザーが別途判断する | [公式サイト](https://karabiner-elements.pqrs.org/) |
+| Karabiner EventViewer / VirtualHID helper | Karabiner本体の配布方法で管理し、個別の導入対象にはしない | [本体のプロジェクト](https://karabiner-elements.pqrs.org/) |
+| Tailscale | macOS向けの配布方法を選ぶ。VPN・拡張の権限は別途扱う | [公式ダウンロード](https://tailscale.com/download/mac) |
+| RunCat Neo | プロジェクトが案内するMac App Storeを使う | [公式リポジトリ](https://github.com/runcat-dev/RunCatNeo) |
+| World Monitor | 配布元・ソースのリリースを使う。自動化前にmacOS向け配布物と完全性を確認する | [公式リポジトリ](https://github.com/koala73/worldmonitor) |
+| Xcode | Appleから導入する。バージョン、macOS互換性、サインインは別途扱う | [Appleのダウンロード案内](https://developer.apple.com/xcode/resources/) |
+| Safari・Apple製アプリ | OSまたはAppleのストア経由。無人インストールできるとは仮定しない | [Apple](https://www.apple.com/) |
+| Burp Suite Community | ホストへの再導入対象から除外。隔離したGUI・VM環境を検討する | [公式製品ページ](https://portswigger.net/burp/communitydownload) |
 
-## Pending items and execution boundary
+## 未確定項目と実行範囲
 
-The complete 53-app presence inventory stays private, including games, helper
-bundles and unresolved app identities. Items without a verified vendor/source
-remain unconfigured; do not invent a mirror or infer a cask from a filename.
-Store/launcher-managed applications must be restored through their authorized
-account or parent application. This record does not grant permission to buy,
-accept licenses, enable login/background services or change security settings.
+ゲーム、補助バンドル、製品の同一性が未確認のものを含む53アプリの完全な存在一覧は非公開のまま保持します。配布元を確認できない項目は未設定とし、ミラーを作り上げたり、ファイル名からcaskを推測したりしません。ストアやランチャーが管理するアプリは、正規のアカウントまたは親アプリから復元します。この記録は、購入、ライセンス同意、ログイン・常駐サービスの有効化、セキュリティ設定の変更を許可するものではありません。
 
-For an application selected later, record product/bundle identity, official
-source, installation method, architecture, version/build, integrity verification
-and update behavior. If exact pinning is unavailable through the chosen store
-or installer, record that exception before deployment.
+今後選ぶアプリについては、製品・バンドルの同一性、公式の取得元、導入方法、アーキテクチャ、バージョン・ビルド番号、完全性の確認方法、更新動作を記録します。選んだストアやインストーラーで厳密な固定ができない場合は、反映前に例外として記録します。

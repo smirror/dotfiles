@@ -1,38 +1,17 @@
-# Optional security toolbox
+# 必要時に使うセキュリティツール環境
 
-The intended category is the tools distributed with Kali Linux and Parrot OS.
-They are currently used infrequently: keep them outside the host/global tool
-set and make a reviewed isolated toolbox available when needed. Do not install
-all of these tools through host apt, Brew, npm or pip.
+対象は、Kali LinuxやParrot OSに含まれるツールです。現在は利用頻度が低いため、ホストのグローバル環境には入れず、確認済みの隔離環境を必要時に使えるようにします。ホストのapt、Brew、npm、pipで一式を導入しません。
 
-| Need | Candidate environment | What must be prepared |
+| 必要な用途 | 環境の候補 | 準備するもの |
 | --- | --- | --- |
-| A ready CLI toolbox | Official `parrotsec/security` image | Review the included tools, architecture and final image digest |
-| A selected Kali CLI tool set | An image based on official `kalilinux/kali-rolling` | Build the selected tools once on the other validation PC and record the resulting image digest/package manifest |
-| Desktop tools, hardware access or networking that the container cannot provide | A dedicated Kali/Parrot VM | Choose a compatible distribution image/version, verify it and keep host integrations explicit |
+| CLIツール一式をすぐ使う | 公式 `parrotsec/security` イメージ | 収録ツール、アーキテクチャ、最終イメージのdigestを確認する |
+| KaliのCLIツールを選んで使う | 公式 `kalilinux/kali-rolling` を基にしたイメージ | 別の検証用PCで選んだツールを一度ビルドし、完成したイメージのdigestとパッケージ一覧を記録する |
+| デスクトップツール、ハードウェア接続、コンテナで提供できないネットワーク機能を使う | 専用のKali・Parrot VM | 対応する配布イメージ・バージョンを選んで検証し、ホストとの連携範囲を明示する |
 
-Kali's standard Docker base does not include the default tool metapackage.
-Parrot's security image includes CLI tool metapackages but deliberately omits
-desktop applications. See [Kali's official Docker guide](https://www.kali.org/docs/containers/using-kali-docker-images/)
-and [Parrot's official image catalog](https://parrotsec.org/docs/containers/parrot-on-docker/).
+Kaliの標準Dockerベースには、既定のツールをまとめたメタパッケージが含まれていません。ParrotのsecurityイメージにはCLIツールのメタパッケージが含まれますが、デスクトップアプリは意図的に除外されています。[Kaliの公式Dockerガイド](https://www.kali.org/docs/containers/using-kali-docker-images/)と[Parrotの公式イメージ一覧](https://parrotsec.org/docs/containers/parrot-on-docker/)を参照してください。
 
-For quick future use, the desired operation is to start an already prepared,
-pinned image. Do not run apt update/install on every launch: the result would
-depend on the repository state at that time. A base-image digest alone does not
-pin packages subsequently fetched during an image build. Record the finished
-tool image digest and package versions; exact rebuilds also need a suitable
-package-repository snapshot. Rolling distributions use an approved dated image
-snapshot rather than a fictitious permanent stable-release number.
+将来すぐに使えるよう、準備・固定済みのイメージを起動する運用を目指します。毎回の起動時にaptの更新・インストールをすると、その時点のリポジトリに結果が依存するため行いません。ベースイメージのdigestだけでは、ビルド時に後から取得したパッケージまでは固定できません。完成したツールイメージのdigestとパッケージのバージョンを記録します。同じ内容を再ビルドするには、適切なパッケージリポジトリのスナップショットも必要です。ローリング配布では、実在しない恒久的な安定版番号ではなく、確認した日付付きイメージを固定します。
 
-The first image retrieval still takes time; caching it ahead of use is optional
-on the other PC. No image pull, build, launch, prefetch or VM installation is
-authorized on the current PC by this definition. No concrete image digest has
-been enrolled or tested yet, so this is not a ready-to-run launcher. The next
-implementation step is to choose one default toolbox, fix its final image and
-prepare a small explicit launcher on the validation PC.
+初回のイメージ取得には時間がかかります。別PCで事前にキャッシュするかは任意です。この定義は、現在のPCでのイメージ取得・ビルド・起動・先行取得やVM導入を許可するものではありません。具体的なdigestの登録・検証はまだ行っておらず、そのまま実行できる起動コマンドもありません。次に実装する場合は、既定の環境を一つ選び、最終イメージを固定して、検証用PCで小さな明示的な起動スクリプトを用意します。
 
-Do not mount the home directory or Docker socket. Start with no mounts and
-only explicitly required target/output paths and networking. Do not enable host
-networking, privileged mode or device access as a generic workaround; choose an
-appropriate VM when needed. Running a toolbox is separate from authorizing any
-network test or target. Existing host applications are not removed by this plan.
+ホームディレクトリ全体やDockerソケットはマウントしません。最初はマウントなしとし、必要な対象・出力先・ネットワークだけを明示的に追加します。汎用的な回避策としてホストネットワーク、特権モード、デバイスアクセスを有効にせず、必要なら適切なVMを選びます。ツール環境の起動と、特定の対象へのネットワーク検査の許可は別です。この計画では既存のホストアプリを削除しません。

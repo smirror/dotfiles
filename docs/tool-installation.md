@@ -1,56 +1,39 @@
-# Reinstallable tool definitions
+# 再導入できるツールの定義
 
-The first target is a selected tool set that can be installed again. Prompt
-management remains a later task. LazyVim's personal configuration, work/doctor
-commands, build/test CI and Skill cleanup are outside this change. Daily update
-proposals are handled separately by the Dependabot definition.
+最初の目標は、選んだツールをまとめて入れ直せる定義を用意することです。プロンプト管理は後の作業として残します。LazyVimの個人設定、work・doctorコマンド、ビルド・テストCI、Skillsの整理は今回の対象外です。毎日の更新提案はDependabotの定義で別途扱います。
 
-## Selected shared tools
+## 選定した共通ツール
 
-These are the initial reinstall targets in `tool-packages.nix`, not a dump of everything
-installed on one machine. They use the existing Nixpkgs/Home Manager revisions
-and source hashes in `flake.lock`; update and validate that lock deliberately.
+`tool-packages.nix` は初期の再導入対象を選んだ一覧で、実機に入っているものをすべて並べたものではありません。`flake.lock` にあるNixpkgs・Home Managerのリビジョンとソースハッシュを使います。lockは明示的に更新・検証してください。
 
-The default version policy is the latest stable upstream release at installation
-or update time, resolved to exact revisions/hashes before execution. Routine
-reinstallation uses the recorded lock/digests rather than resolving a moving
-latest reference again. Prereleases and compatibility/security exceptions need
-an explicit decision. A pin is a reproducible snapshot, not a permanent freeze.
-If the approved package source lags upstream, record that gap before choosing a
-new pin or an exception; do not silently describe the older version as latest.
+導入・更新時点で配布元の最新安定版を選び、実行前に正確なリビジョン・ハッシュへ固定する方針です。通常の再導入では、動くlatest参照を再解決せず、記録済みのlock・digestを使います。プレリリースや互換性・セキュリティ上の例外は明示的に判断します。固定は再現可能な時点の記録であり、永久に更新しないという意味ではありません。承認したパッケージ提供元が配布元の最新版に追い付いていない場合は、その差を記録してから新しい固定先や例外を選びます。古い版を最新版として扱いません。
 
-| Tools | Purpose | Installer | Version policy |
+| ツール | 用途 | 導入方法 | バージョン方針 |
 | --- | --- | --- | --- |
-| `git`, `gh`, `ghq`, `lazygit` | Git operations, GitHub and repository navigation | Nix | Fixed by the lock |
-| `tmux` | Terminal sessions | Nix | Fixed by the lock |
-| `neovim` | Editor executable for the existing LazyVim setup | Nix | Fixed by the lock |
-| `jq` | JSON inspection and transformation | Nix | Fixed by the lock |
-| `fd`, `ripgrep`, `bat` | File search, text search and previews | Nix | Fixed by the lock |
-| `fzf`, `peco` | Existing shell selection helpers | Nix | Fixed by the lock |
-| `starship` | Shell prompt | Nix | Fixed by the lock |
-| `coreutils`, `findutils`, `gawk`, `getopt`, `gnugrep`, `gnused`, `perl` | Portable helper dependencies and GNU options | Nix | Fixed by the lock |
-| Fish | Shell included in the tools bundle | Nix | Fixed by the lock |
-| Home Manager | Optional configuration deployment only | Separate flake output / module | Fixed by the lock |
+| `git`, `gh`, `ghq`, `lazygit` | Git操作、GitHub、リポジトリの移動 | Nix | lockで固定 |
+| `tmux` | 端末セッションの管理 | Nix | lockで固定 |
+| `neovim` | 既存LazyVim環境で使うエディター本体 | Nix | lockで固定 |
+| `jq` | JSONの確認・変換 | Nix | lockで固定 |
+| `fd`, `ripgrep`, `bat` | ファイル・テキスト検索とプレビュー | Nix | lockで固定 |
+| `fzf`, `peco` | 既存シェルヘルパーの候補選択 | Nix | lockで固定 |
+| `starship` | シェルプロンプト | Nix | lockで固定 |
+| `coreutils`, `findutils`, `gawk`, `getopt`, `gnugrep`, `gnused`, `perl` | ヘルパーの移植性とGNUオプションの依存関係 | Nix | lockで固定 |
+| Fish | ツール一式に含めるシェル | Nix | lockで固定 |
+| Home Manager | 必要な場合の設定反映だけを担当 | 別のflake出力・モジュール | lockで固定 |
 
-The tools bundle contains 20 explicit packages plus Fish. Home Manager remains
-a separate configuration-deployment entrypoint. Git,
-GitHub CLI, Tmux, jq and Neovim are new declarations in this change. Adding
-their binaries does not add ownership of their settings, authentication or
-saved data. Existing Brew installations are retained.
+ツール一式は、明示した20パッケージとFishです。Home Managerによる設定反映は独立した入口です。今回新たに定義したのはGit、GitHub CLI、Tmux、jq、Neovimです。実行ファイルの追加によって、既存設定、認証情報、保存データまで管理対象にしません。Brewの既存インストールも維持します。
 
-## First validation and subsequent installation
+## 初回検証とその後の導入
 
-All installation/update/build/activation acceptance below is for the other,
-designated validation PC. Do not exercise it on the current working PC.
+以下の導入・更新・ビルド・反映の動作確認は、すべて別の検証用PCで行います。現在の作業用PCでは実行しません。
 
-The tools output does not import `home.nix` and needs no user/home identity:
+ツール出力は `home.nix` を取り込まず、ユーザー名・ホームディレクトリの指定も不要です。
 
 ```sh
 nix --extra-experimental-features 'nix-command flakes' build --no-update-lock-file .#tools --out-link result-tools
 ```
 
-After reviewing it on that other PC, a first tools-only installation uses a
-dedicated profile, leaving the default profile and managed settings separate:
+別PCで内容を確認した後、初回のツール専用導入には専用プロファイルを使います。既定のプロファイルと管理対象の設定を分離します。
 
 ```sh
 mkdir -p "$HOME/.local/state/nix/profiles"
@@ -58,31 +41,17 @@ nix --extra-experimental-features 'nix-command flakes' profile add --no-update-l
     --profile "$HOME/.local/state/nix/profiles/dotfiles-tools" --name dotfiles-tools .#tools
 ```
 
-Use `profile upgrade` for the existing named entry after a reviewed repository
-update; do not repeatedly add another copy or change its priority to hide a
-collision. Add that profile's bin directory to the chosen shell's PATH as a
-separate configuration step. The tracked Fish configuration prefers it when
-present; the existing live Fish configuration has not been changed.
+リポジトリの更新を確認した後は、既存の名前付き項目に `profile upgrade` を使います。同じものを繰り返し追加したり、競合を隠すため優先順位を変更したりしません。このプロファイルのbinを使うシェルのPATHへ追加する作業は、別の設定手順です。Git管理しているFish設定は、存在する場合にこのパスを優先します。実機で使用中のFish設定は変更していません。
 
-Configuration deployment is separately selected with `home-manager.sh`.
-Its Fish/Home Manager modules retain their required runtime packages, but the
-common 20-tool list is no longer installed by `home.nix`. A configuration switch
-is not part of a tools-only install/update. Follow the [migration procedure](nix-migration.md)
-before any such switch. The new split has not been physically tested here.
+設定反映は `home-manager.sh` で別途選びます。Fish・Home Managerのモジュール自身に必要な実行時パッケージは残りますが、共通20ツールの一覧は `home.nix` から導入しません。ツールだけの導入・更新に設定の切り替えは含めません。切り替える場合は[移行手順](nix-migration.md)に従います。この分離後の構成は、ここでは実環境で検証していません。
 
-Nix takes command precedence after activation. On the inspected machine,
-Git changes from Apple Git 2.54.0 to Nix Git 2.56.0, and jq from Apple's 1.7.1
-to Nix 1.8.2. gh 2.103.3, tmux 3.8 and Neovim 0.12.6 match the inspected
-versions. Matching versions do not prove identical packaging or behavior.
+反映後はNixのコマンドが優先されます。調査した実機ではGitがApple Git 2.54.0からNix Git 2.56.0へ、jqがApple版1.7.1からNix版1.8.2へ変わります。gh 2.103.3、tmux 3.8、Neovim 0.12.6は調査時と同じ版です。同じ版でも、パッケージ構成や動作が同一とは限りません。
 
-## LazyVim on a new machine
+## 新しい端末でのLazyVim
 
-Neovim and LazyVim are separate installation steps. The existing machine
-already has LazyVim; leave its configuration, lock file, plugin downloads,
-Mason tools and editor state under their present ownership.
+NeovimとLazyVimの導入は別の手順です。既存の端末にはLazyVimがあるため、設定、lockファイル、プラグインのダウンロード、Masonのツール、エディター状態は既存の管理方法を維持します。
 
-For a new environment only, this optional starter initialization keeps any
-existing configuration, including a symlink. Run it after Git is available:
+以下は新しい環境だけで使う任意のスターター初期化です。リンクを含む既存設定は保持します。Gitが使えるようになってから実行してください。
 
 ```sh
 dotfiles_nvim_config="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
@@ -94,175 +63,87 @@ else
 fi
 ```
 
-This pins the starter snapshot, not all future plugins. Normal first startup
-downloads plugins through lazy.nvim; plugin updates and its writable lock file
-remain outside dotfiles management. No automatic normal Neovim startup is run
-against the existing machine. See the [official installation procedure](https://www.lazyvim.org/installation).
+固定するのはスターターのスナップショットで、将来の全プラグインではありません。通常の初回起動ではlazy.nvimがプラグインを取得します。プラグイン更新と書き込み可能なlockファイルはdotfilesの管理外です。既存端末でNeovimを自動で通常起動することはしません。[公式の導入手順](https://www.lazyvim.org/installation)を参照してください。
 
-## Remaining inventory and ownership decisions
+## 棚卸しと導入・更新の担当について残る判断
 
-A refreshed private inventory records 170 Brew formulae, four casks and 34
-formulae with direct-install history. It also records global npm, uv, pipx and
-Cargo tools and 53 application bundles. Direct-install metadata is historical,
-and application presence is not an instruction to reinstall it. Dependencies
-are not copied into the top-level declaration automatically.
+更新した非公開の棚卸しには、Brewの170 formula、4 cask、直接導入の履歴がある34 formulaを記録しています。グローバルのnpm、uv、pipx、Cargoツールと53のアプリバンドルも記録しています。直接導入の情報は過去の履歴であり、アプリがあることは再導入の指示ではありません。依存パッケージを自動で直接導入対象へ移しません。
 
-| Area | Current ownership to retain | Remaining decision |
+| 分野 | 維持する現在の管理方法 | 残る判断 |
 | --- | --- | --- |
-| Node, Corepack/pnpm, Bun | Preserve existing installations while auditing CLI dependencies | Opt-in development runtimes; prefer selected CLI packages with their own locked runtimes |
-| Python, uv, pipx | Preserve OS/Brew Python and existing isolated tool environments | No default global development Python; select interpreters and dependencies per retained tool |
-| Rust and global Cargo tools | Cargo is currently used to install tools; preserve rustup/Cargo and local sources | Prefer locked tool packages; Rust development remains opt-in |
-| Go and Go tools | Existing installation retained; currently unused | Excluded from the default reinstall set; add only when requested |
-| AI clients and external Skills | Existing native, Brew, npm and uv installers | Record required clients and exact sources; GSD is currently unused and excluded from the initial reinstall set |
-| macOS applications | Current installers retained | Record candidates, install methods and official sources in [the app catalog](macos-apps.md); do not automatically enroll all installed apps |
-| Fonts and TeX templates | Outside this repository | Excluded; do not copy font/template assets into the public repository. Existing TeX runtimes remain untouched |
-| Specialist tools and local services | Current installers and existing data | Confirm need and preserve data; no service/database operations are performed here |
-| Apple developer tools | Existing selected Xcode/Command Line Tools | macOS-only selection below; no automatic installation or switching |
+| Node、Corepack/pnpm、Bun | CLIの依存関係を調べる間は既存の導入状態を維持 | 開発ランタイムは選択制。CLI専用の固定済みランタイムを持つパッケージを優先 |
+| Python、uv、pipx | OS・BrewのPythonと既存の隔離ツール環境を維持 | 開発用のグローバルPythonは既定で入れず、残すツールごとにインタープリターと依存関係を選ぶ |
+| Rust・グローバルCargoツール | Cargoはツール導入に使用中。rustup・Cargoとローカルソースを維持 | 固定済みツールパッケージを優先し、Rust開発環境は選択制 |
+| Go・Goツール | 既存導入は維持。現在は未使用 | 既定の再導入対象から除外し、必要になったときに追加 |
+| AIクライアント・外部Skills | 既存のネイティブ、Brew、npm、uvの導入方法を維持 | 必要なクライアントと正確な取得元を記録。現在使っていないGSDは初期の再導入対象から除外 |
+| macOSアプリ | 現在の導入方法を維持 | [アプリ一覧](macos-apps.md)に候補・導入方法・公式リンクを記録。インストール済みの全アプリを自動で対象にしない |
+| フォント・TeXテンプレート | このリポジトリの管理外 | 対象外。公開リポジトリへ本体をコピーしない。既存TeXランタイムも変更しない |
+| 専門ツール・ローカルサービス | 現在の導入方法と既存データを維持 | 必要性を確認しデータを保護。ここではサービス・データベース操作をしない |
+| Apple開発ツール | 選択済みのXcode・Command Line Toolsを維持 | 下記のmacOS専用の選択肢で扱う。自動導入・切り替えはしない |
 
-Full raw inventory stays outside this public repository. Personal prompts,
-API keys, account state, application data and project paths are not install
-definitions. Bun's previous global-list query failed while attempting lock
-migration; it remains unconfirmed and was not retried during this inventory.
+生の棚卸し全体は公開リポジトリの外に置きます。個人のプロンプト、APIキー、アカウント状態、アプリデータ、プロジェクトのパスは導入定義ではありません。以前のBunのグローバル一覧取得はlock移行を試みて失敗しています。一覧は未確認で、この棚卸しでは再実行していません。
 
-A future Brewfile records selected Homebrew targets and an update policy; it
-is not a replacement for the Nix lock's exact package selection. Do not maintain
-the same desired CLI list in both managers. See [Homebrew Bundle documentation](https://docs.brew.sh/Brew-Bundle-and-Brewfile).
+将来Brewfileを用意する場合は、選んだHomebrew対象と更新方針を記録します。Nix lockによる厳密なパッケージ選択の代替ではありません。同じ希望CLI一覧を二つの管理ツールで重複管理しません。[Homebrew Bundleの説明](https://docs.brew.sh/Brew-Bundle-and-Brewfile)を参照してください。
 
-### Current AI-tool selections
+### AIツールの現在の選択
 
-| Tool | Current decision | Reinstall/update treatment |
+| ツール | 現在の方針 | 再導入・更新時の扱い |
 | --- | --- | --- |
-| pi | In use now; retain the existing npm installation, inspected version 1.5.0 | May be removed later. Future reviewed updates should select the latest stable release. Do not automatically migrate or add to the default common set. The inspected version is a snapshot, not a permanent target or newly locked deployment |
-| qwen-code | Homebrew 0.26.8 uninstalled at the user's request | Excluded from reinstall targets. Preserve the user's saved data; retain shared Node/ripgrep dependencies |
-| GSD | Currently unused | Excluded from the initial reinstall set; cleanup remains a separate task |
+| pi | 現在使用中。調査時1.5.0の既存npm版を維持 | 将来削除する可能性あり。更新を確認する際は最新安定版を選ぶ。自動移行や共通の既定一覧への追加はしない。調査した版は現状の記録であり、永久の目標版や新たに固定した導入定義ではない |
+| qwen-code | ユーザーの依頼でHomebrew 0.26.8をアンインストール済み | 再導入対象から除外。保存データと、共用するNode・ripgrepの依存関係は維持 |
+| GSD | 現在は未使用 | 初期の再導入対象から除外。整理は別作業 |
 
-The inventory counts above describe the snapshot before qwen-code removal.
-After removal, the installed formula count is 169. Removal was limited to the
-qwen-code formula, with automatic dependency removal disabled. The existing pi
-entrypoint and the qwen saved-data contents/metadata were verified unchanged.
+上記の棚卸し件数はqwen-code削除前の記録です。削除後のformula数は169です。自動依存削除を無効にし、qwen-codeのformulaだけを削除しました。既存piの起動先と、qwen保存データの内容・メタデータが変わっていないことを確認済みです。
 
-## Minimal runtimes and controlled installation
+## ランタイムを絞り、導入方法を管理する
 
-The reinstall set is an explicit selection, not an automatic import of installed
-software. No development language is enabled by default. Rust/Cargo, Go,
-Python, Node and package managers for development are opt-in when needed.
-Existing host installations stay intact while dependent tools are identified.
+再導入対象は明示的に選びます。既存ソフトを自動で取り込むものではありません。開発言語は既定で有効にせず、Rust・Cargo、Go、Python、Nodeと開発用パッケージ管理ツールは必要時に選びます。依存するツールを特定する間は、ホストの既存インストールを維持します。
 
-For day-to-day CLI tools, prefer a selected Nix package over a chain of manual
-Node/npm/pnpm, Python/pip or Cargo installations. The locked package can bring
-its own runtime and dependencies; that does not require a global language
-interpreter or package manager. This is dependency management, not process
-isolation. Tools installed through Cargo and Rust development are separate needs.
+普段使うCLIは、Node・npm・pnpm、Python・pip、Cargoの手動導入を重ねるより、選定したNixパッケージを優先します。固定したパッケージが専用ランタイムと依存関係を持てるため、グローバルの言語インタープリターやパッケージ管理ツールは必須ではありません。これは依存関係の管理であり、プロセスの隔離ではありません。Cargoによるツール導入とRust開発も別の用途です。
 
-Prioritize Python and Node ownership before removing or replacing anything:
+削除・置き換えの前に、特にPythonとNodeの管理方法を整理します。
 
-- Separate OS-provided Python, tool-specific interpreters and project runtimes.
-  Do not replace the OS interpreter or install packages into it.
-- Some current Node entrypoints resolve `node` from PATH; others reference a
-  Homebrew path directly. Replacing the global runtime alone is not a migration.
-- Existing pipx environments can share one Homebrew Python, while uv tools may
-  use uv-managed Python. An isolated package environment alone does not pin its
-  interpreter or all dependency versions.
-- For an extra CLI outside Nixpkgs, record its approved source, exact tool and
-  runtime versions, dependency lock/hashes and expected executables before
-  adding a reinstall path. A bare versioned npm/pip command is not a full lock.
-- Keep project language environments separate. A project version file is not
-  permission to download a new runtime or tool automatically.
+- OS付属Python、ツール専用インタープリター、プロジェクト用ランタイムを分けます。OSのインタープリターを置き換えたり、そこへパッケージを導入したりしません。
+- Nodeを使う起動ファイルには、PATHから `node` を探すものと、Homebrewのパスを直接参照するものがあります。グローバルランタイムの変更だけでは移行になりません。
+- 既存pipx環境が一つのHomebrew Pythonを共用する一方、uvツールがuv管理のPythonを使う場合があります。パッケージ環境の隔離だけでは、インタープリターや全依存バージョンは固定されません。
+- Nixpkgs外のCLIを追加する場合は、再導入方法を加える前に、承認した取得元、正確なツール・ランタイムの版、依存lock・ハッシュ、期待する実行ファイルを記録します。版を指定しただけのnpm・pipコマンドでは完全な固定になりません。
+- プロジェクトの言語環境は別管理にします。プロジェクトのバージョンファイルは、新しいランタイムやツールを自動取得する許可ではありません。
 
-The arm64 Linux tool-profile output was checked: it exposes none of `python`,
-`python3`, `node`, `npm`, `npx`, `pnpm`, `pip` or `pip3` in its bin directory.
-Other packages may still depend on runtimes inside their own closures. This
-check does not inventory every interpreter inside those dependencies.
+確認したarm64 Linuxのツールプロファイル出力では、binディレクトリに `python`、`python3`、`node`、`npm`、`npx`、`pnpm`、`pip`、`pip3` はありませんでした。ほかのパッケージが内部の依存関係としてランタイムを持つ可能性はあります。この検査で依存先すべてのインタープリターを棚卸ししたわけではありません。
 
-## Downloads, containers and update boundaries
+## ダウンロード・コンテナ・更新の範囲
 
-Use the repository's selected definitions as the normal installation entry
-point. Prefer locked Nix packages for shared CLI tools, an explicitly curated
-Homebrew list for macOS applications, and named official images for chosen
-container tools. Reduce manual website downloads; an exception needs an official
-source URL, exact version, integrity/signature verification and a documented
-update method. Homebrew-managed apps that cannot be restored at an exact
-version must be identified as exceptions, not described as fully pinned.
+通常の導入入口には、リポジトリで選定した定義を使います。共通CLIは固定済みNixパッケージ、macOSアプリは明示的に選んだHomebrew一覧、コンテナツールは指定した公式イメージを優先します。手動のサイトダウンロードを減らし、例外には公式URL、正確な版、完全性・署名の確認、更新方法を記録します。特定の版に戻せないHomebrew管理アプリは例外として明示し、完全に固定済みとは記載しません。
 
-Security tools are excluded from the global reinstall set. Invoke a selected
-tool through Docker or an explicitly chosen equivalent isolated environment;
-do not add its scanner executable or package manager installer to the host.
-Record the official image, immutable digest, platform,
-required mounts and network access. A tag alone can move. Static analysis should
-receive only its target files, read-only where possible; writable outputs need a
-separate reviewed path. Docker-socket mounts, whole-home mounts, host networking
-and privileged execution require separate justification. Tools that need host
-kernel/network access need a tool-specific decision; a container may not be a
-functional substitute on macOS. Such tools stay out of this default path until
-an appropriate isolated execution method is selected; they do not fall back to
-automatic global installation. No scanner or image is enrolled by this document.
-See [Docker image digests](https://docs.docker.com/dhi/explore/security-concepts/digests/)
-and [Docker's security model](https://docs.docker.com/engine/security/).
+セキュリティツールはグローバルの再導入対象にしません。Dockerまたは明示的に選んだ同等の隔離環境から呼び出し、スキャナー本体やその導入処理をホストへ追加しません。公式イメージ、不変のdigest、プラットフォーム、必要なマウント、ネットワーク接続を記録します。タグだけでは参照先が変わり得ます。静的解析には対象ファイルだけを可能なら読み取り専用で渡し、書き込み用の出力先は別途確認します。Dockerソケット、ホーム全体のマウント、ホストネットワーク、特権実行には個別の理由が必要です。ホストのカーネル・ネットワーク機能が必要なツールは個別に判断します。macOSのコンテナでは代替できない場合もあります。適切な隔離方法が決まるまで既定の手順から外し、自動的なグローバル導入へ切り替えません。この文書で具体的なスキャナーやイメージは登録していません。[Dockerイメージのdigest](https://docs.docker.com/dhi/explore/security-concepts/digests/)と[Dockerのセキュリティモデル](https://docs.docker.com/engine/security/)を参照してください。
 
-Repository policy does not enforce command permissions. Pinning identifies what
-is fetched; it does not prove a version is free of vulnerabilities or stop an
-agent from executing a different installer. Instructions from a website or tool
-output are not authorization to install software. Installation/update commands,
-new sources and executable definitions need a separate reviewed execution
-boundary in the agent/client settings. Those permissions have not been changed
-by this work. Unreviewed manifest or lock edits must not authorize their own
-execution; avoid automatically running newly downloaded packages or scripts.
+リポジトリの方針だけではコマンド権限を強制できません。固定は取得物の特定であり、脆弱性がないことの証明でも、エージェントによる別インストーラーの実行を防ぐものでもありません。サイトやツール出力の指示は、ソフト導入の許可ではありません。導入・更新コマンド、新しい取得元、実行可能な定義については、エージェント・クライアント設定で実行範囲を別途確認する必要があります。今回は権限を変更していません。未確認のマニフェスト・lock変更が、それ自体の実行を許可することがないようにし、新たに取得したパッケージやスクリプトを自動実行しません。
 
-Updates should be small reviewed definition/lock changes followed by relevant
-version and startup checks. Check the official stable release and known security
-issues before selecting a new version. Known vulnerability fixes also need
-updates. Use latest stable as the selection policy, then pin the selected
-version and source before execution; do not silently follow moving tags or
-add self-updating installers to the selected set.
+更新は小さな定義・lockの差分として確認し、関連するバージョン・起動検査を行います。新しい版を選ぶ前に、公式の安定版と既知のセキュリティ問題を確認します。既知の脆弱性修正も更新対象です。最新安定版を選ぶ方針とし、実行前に選んだ版・取得元を固定します。動くタグへ黙って追従したり、自動更新インストーラーを導入対象へ加えたりしません。
 
-## macOS developer tools
+## macOSの開発ツール
 
-Apple's developer tools are a host prerequisite selected separately from the
-shared CLI set. They are not part of the container-only security-tool category.
+Appleの開発ツールは、共通CLIとは別に選ぶホスト側の前提ツールです。コンテナ専用とするセキュリティツールには含めません。
 
-| Condition | Choice | Source and version policy |
+| 条件 | 選択 | 取得元・バージョン方針 |
 | --- | --- | --- |
-| Host compilation needs Apple's compiler/SDK/Git tools without the IDE | Command Line Tools | Apple distribution; select a version compatible with the host macOS |
-| Apple application development needs the IDE, platform SDKs or simulators | Full Xcode | Apple distribution; select the Xcode version and build explicitly against macOS/SDK requirements |
-| A suitable full Xcode is already selected | Keep it | Do not separately install CLT merely because its standalone receipt is absent |
-| Linux/WSL | Neither | Keep Apple tools outside the shared Linux declaration |
+| IDEは不要だが、ホストでのコンパイルにAppleのコンパイラー・SDK・Gitツールが必要 | Command Line Tools | Appleから取得し、ホストmacOSに合う版を選ぶ |
+| Apple向けアプリ開発でIDE・各プラットフォームのSDK・シミュレーターが必要 | Xcode一式 | Appleから取得し、macOS・SDK要件に合わせて版とビルドを明示的に選ぶ |
+| 適切なXcode一式がすでに選択済み | 維持 | 単体CLTの導入記録がないだけで追加導入しない |
+| Linux・WSL | どちらも不要 | AppleツールをLinux共通定義へ含めない |
 
-The inspected machine selects `/Applications/Xcode.app/Contents/Developer`,
-with Xcode 27.1, build 27A9275. A separate CLT 27.0 receipt also exists; that is
-an observation, not a requirement to reinstall both packages on a new machine.
+調査した実機は `/Applications/Xcode.app/Contents/Developer` を選択し、Xcode 27.1、ビルド27A9275を使っています。別途CLT 27.0の導入記録もあります。これは観測結果で、新しい端末にも両方を再導入する要件ではありません。
 
-Record the chosen Apple version/build and official source before installation.
-The Mac App Store is a convenient current-release route, not an exact historical
-version lock. Apple's additional downloads provide specific releases and may
-require Apple Account sign-in. Do not substitute an unverified mirror to avoid
-authentication. Installation, license acceptance, first-launch components and
-changing the selected developer directory are separate host actions; none is
-automatically performed here. This document records the option and policy,
-not a tested unattended Xcode installer.
+導入前に、選んだAppleの版・ビルドと公式の取得元を記録します。Mac App Storeは現行版の便利な導入経路ですが、過去の特定バージョンの固定ではありません。Appleの追加ダウンロードでは特定リリースを取得でき、Apple Accountでのサインインが必要な場合があります。認証を避けるために未検証のミラーを使いません。導入、ライセンス同意、初回起動用コンポーネント、開発ディレクトリの切り替えは別々のホスト操作で、ここでは自動実行しません。この文書は選択肢と方針の記録であり、無人のXcode導入を検証したものではありません。
 
-See [Apple's downloads](https://developer.apple.com/xcode/resources/) and
-[Xcode/macOS compatibility](https://developer.apple.com/xcode/system-requirements).
+[Appleのダウンロード案内](https://developer.apple.com/xcode/resources/)と[Xcode・macOSの互換性](https://developer.apple.com/xcode/system-requirements)を参照してください。
 
-## Update proposals and manual updates
+## 更新提案と手動更新
 
-Dependabot is configured to check the Nix inputs every day at 09:00 Asia/Tokyo
-and group the two input changes into one PR, with at most one open version-update
-PR. No auto-merge or host installation is configured. This does not audit every
-CLI inside Nixpkgs for vulnerabilities or replace execution checks on the other PC.
-The configuration becomes active only after it reaches the default branch and
-GitHub accepts it; no hosted run has been confirmed yet.
+Dependabotは毎日09:00（Asia/Tokyo）にNix入力を確認し、二つの入力の変更を一つのPRにまとめます。同時に開くバージョン更新PRは最大一つです。自動マージやホストへの導入は設定していません。Nixpkgs内の全CLIの脆弱性監査や、別PCでの実行確認の代替ではありません。定義がデフォルトブランチに入りGitHubに受理されてから有効になります。GitHub上で更新チェックが実行されたことは、まだ確認していません。
 
-`flake.nix` identifies the approved tracking branches; `flake.lock` still fixes
-the reviewed revisions and source hashes. Only the original-ref metadata changed
-in this work; locked revisions/hashes have not been upgraded. Dependabot updates
-`flake.lock`, but does not upgrade pinned refs written directly in `flake.nix`.
-See [GitHub's Nix support](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories#nix).
+`flake.nix` は承認した追跡ブランチを示し、`flake.lock` は確認済みのリビジョンとソースハッシュを固定します。今回変えたのは元の参照先を表すメタデータだけで、固定済みのリビジョン・ハッシュは更新していません。Dependabotは `flake.lock` を更新しますが、`flake.nix` に直接固定した参照先までは更新しません。[GitHubのNix対応](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories#nix)を参照してください。
 
-For a manual batch proposal on the other PC, `scripts/update-lock.sh` updates the
-lock only. It refuses existing staged or unstaged flake edits and does not install,
-activate, commit or push. Review the resulting diff and validate there before
-applying the tools profile. This script was exercised only with a fake Nix
-executor in temporary repositories on this PC, never with real Nix.
+別PCで手動の一括更新案を作る場合は、`scripts/update-lock.sh` がlockだけを更新します。ステージ済み・未ステージの既存flake編集があれば拒否し、導入・反映・コミット・pushはしません。ツールプロファイルへ適用する前に、生成された差分を確認し、そのPCで検証します。このスクリプトは現在のPCでは一時リポジトリ内の代替Nixプログラムでのみテストしており、実際のNixでは実行していません。
 
-Kali/Parrot toolboxes are a later opt-in definition; see the [security environment plan](security-environments.md).
-They are not included in the common tool profile.
+Kali・Parrotのツール環境は、後で必要に応じて追加する定義です。[セキュリティ環境の計画](security-environments.md)を参照してください。共通ツールプロファイルには含めません。

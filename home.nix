@@ -39,10 +39,6 @@ in
   home = {
     inherit username homeDirectory;
     stateVersion = "26.05";
-    packages = with pkgs; [
-      bat coreutils fd findutils fzf gawk getopt ghq gnugrep gnused
-      lazygit peco perl ripgrep starship
-    ];
     sessionPath = [ "${config.home.profileDirectory}/bin" ];
     file = {
       ".codex/AGENTS.md".source = ./agents/global.md;
@@ -56,7 +52,7 @@ in
     generateCompletions = false;
     shellInit = builtins.readFile ./fish/config.fish;
     shellInitLast = ''
-      fish_add_path --path --move ${lib.escapeShellArg "${config.home.profileDirectory}/bin"}
+      fish_add_path --path --move ${lib.escapeShellArg "${homeDirectory}/.local/state/nix/profiles/dotfiles-tools/bin"} ${lib.escapeShellArg "${config.home.profileDirectory}/bin"}
     '';
   };
 

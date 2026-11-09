@@ -2,9 +2,9 @@
   description = "Shared macOS and WSL user environment";
 
   inputs = {
-    # Review these pinned development revisions together before updating.
-    nixpkgs.url = "github:NixOS/nixpkgs/6dadaf4375be35033e1c84395adbd53ff5fded96";
-    home-manager.url = "github:nix-community/home-manager/b787c48e2ec57a9d098f5c2721882a3bc1e16f97";
+    # Track update sources here; flake.lock pins the reviewed revisions/hashes.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -14,8 +14,12 @@
       forSystems = nixpkgs.lib.genAttrs systems;
     in
     {
-      packages = forSystems (system: {
+      packages = forSystems (system: let pkgs = nixpkgs.legacyPackages.${system}; in {
         home-manager = home-manager.packages.${system}.home-manager;
+        tools = pkgs.buildEnv {
+          name = "dotfiles-tools";
+          paths = (import ./tool-packages.nix pkgs) ++ [ pkgs.fish ];
+        };
       });
 
       homeConfigurations = forSystems (system:

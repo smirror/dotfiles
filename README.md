@@ -1,101 +1,103 @@
 # Dotfiles
 
-Personal dotfiles configuration for development environment.
+個人の開発環境で使う設定と、ツールの再導入定義を管理します。
 
-## Features
+## 主な内容
 
-- **Fish Shell**: Modern shell configuration with useful aliases and functions
-- **Git**: Comprehensive git configuration with aliases
-- **Tmux**: Terminal multiplexer configuration
-- **Modern CLI Tools**: Replacements for traditional Unix tools (bat, exa, fd, rg, etc.)
+- **Fish**：エイリアス、関数、補完、キー割り当て
+- **Git**：よく使う操作のエイリアスを含む設定
+- **Tmux**：端末の分割・セッション管理の設定
+- **CLIツール**：bat、exa、fd、rgなど、従来のUnixコマンドを補うツール
 
-## Nix + Home Manager (macOS and WSL)
+## Nix + Home Manager（macOS・WSL共通）
 
-The shared environment is declared in `flake.nix` and `home.nix`. Both macOS and WSL use the same declarations and commands; only OS/CPU detection and local user/home values differ. nix-darwin, NixOS and Ansible are not required.
+共通環境を `flake.nix` と `home.nix` で定義しています。macOSとWSLで同じ定義・コマンドを使い、OS・CPUの判定と、ローカルのユーザー名・ホームディレクトリだけを切り替えます。nix-darwin、NixOS、Ansibleは不要です。
 
-- `home.nix` installs the declared CLI tools and Fish, and manages an explicit list of Fish helper files.
-- Codex and Claude Code share `agents/global.md`. Existing external Skills keep their current installer ownership.
-- Git/Tmux settings, `fish_variables`, histories, credentials and client permission settings are outside this migration.
-- Home Manager normally links managed files into the Nix store; an identical existing regular file may be left in place. Parent directories and unrelated local files stay outside its ownership.
+- `tool-packages.nix` にCLI一覧を定義し、`packages.<system>.tools` でFishと一緒に導入します。ホームディレクトリの設定反映とは独立しています。
+- `home.nix` は、必要な場合にFishと共通エージェント指示を配置します。Fish・Home Managerのモジュール自身が必要とする実行時パッケージは引き続き導入します。
+- CodexとClaude Codeは `agents/global.md` を共用します。外部Skillsの導入・更新は既存の方法を維持します。
+- Git・Tmuxの設定、`fish_variables`、履歴、認証情報、クライアントの権限設定は、この移行の対象外です。
+- Home Managerは通常、管理対象をNix storeへのリンクとして配置します。既存の通常ファイルが同一内容なら、そのまま残る場合があります。親ディレクトリと無関係なローカルファイルは管理対象にしません。
 
-See the [tool inventory and proposed additions](docs/tool-inventory.md) before activation. Fish and ripgrep match the inspected machine's versions. Intel Macs are outside the supported scope.
+反映前に[ツールの棚卸しと追加候補](docs/tool-inventory.md)を確認してください。Fishとripgrepは調査時の実機と同じバージョンです。Intel Macは対応対象外です。
 
-### Prepare and build
+### 別の検証用PCで準備・ビルドする
 
-The initial shell script installs a pinned, checksum-verified official Nix release if Nix is absent. On macOS this adds the Nix volume, build users and daemon; review [the migration procedure](docs/nix-migration.md) before running it. It does not switch the login shell or apply Home Manager.
+初期導入用シェルスクリプトは、Nixがない場合に、バージョン固定・チェックサム確認済みの公式Nixを導入します。macOSではNix用ボリューム、ビルド用ユーザー、デーモンが追加されるため、実行前に[移行手順](docs/nix-migration.md)を確認してください。ログインシェルの変更やHome Managerによる設定反映は行いません。
 
 ```sh
 ./scripts/bootstrap.sh
-# Open a new shell after Nix installation.
-./scripts/home-manager.sh check   # evaluate all three declared OS/CPU targets
-./scripts/home-manager.sh build   # build the current target; do not activate it
+# Nix導入後、新しいシェルを開く。
+nix --extra-experimental-features 'nix-command flakes' build --no-update-lock-file .#tools --out-link result-tools
+# 設定の生成も必要な場合は、別途実行する。
+./scripts/home-manager.sh check
+./scripts/home-manager.sh build
 ```
 
-`DOTFILES_USER` and `DOTFILES_HOME` default to the current user and home directory. The same shared declaration handles `aarch64-darwin`, `aarch64-linux` and `x86_64-linux`. Explicit overrides are intended for isolated evaluation/build tests, not another person's live home.
+`DOTFILES_USER` と `DOTFILES_HOME` の既定値は、現在のユーザー名とホームディレクトリです。共通定義は `aarch64-darwin`、`aarch64-linux`、`x86_64-linux` に対応します。明示的な上書きは隔離した評価・ビルド用であり、他人が使用中のホームに反映するためのものではありません。
 
-Nixpkgs and Home Manager use pinned development revisions with a committed `flake.lock`. Review these inputs together when updating them. `home.stateVersion` stays at `26.05`; it controls configuration compatibility, not the package release. A syntax check alone is not Nix evaluation or a successful build.
+NixpkgsとHome Managerは開発ブランチのリビジョンを固定し、`flake.lock` をGit管理します。更新時は両者をまとめて確認してください。`home.stateVersion` は `26.05` のままです。これは設定の互換性を制御する値で、パッケージのリリース番号ではありません。構文検査だけでは、Nixの評価やビルドが成功したことにはなりません。
 
-### Review and activate
+### 別の検証用PCで差分を確認・反映する
 
-Inspect `result/home-files`, compare every managed destination and prepare the backups described in [the migration procedure](docs/nix-migration.md). Existing differing files cause a collision; there is no automatic forced overwrite.
+`result/home-files` を確認し、管理先を一つずつ比較して、[移行手順](docs/nix-migration.md)に沿ったバックアップを用意します。既存ファイルと内容が異なる場合は競合として停止し、自動で強制上書きしません。
 
 ```sh
-# Only after the file/profile changes and restoration procedure are reviewed:
+# ファイル・プロファイルの変更と復元手順を確認した後に限り実行する。
 ./scripts/home-manager.sh switch
 ```
 
-Do not run `fisher update` against the Nix-managed helper files. Change the tracked sources and rebuild instead. `fish_variables` is not an import source for Home Manager and must not be copied from the live machine into this repository.
+Nix管理下のヘルパーファイルに対して `fisher update` を実行しないでください。Git管理しているソースを変更し、再ビルドします。`fish_variables` はHome Managerへの取り込み元ではありません。実機のファイルをこのリポジトリへコピーしないでください。
 
-### Checks without applying
+### 設定を反映せずに検査する
 
 ```sh
 python3 -B -m unittest discover -s tests -v
 ```
 
-The tests use temporary homes and repositories. Installer and Nix command-routing tests use fakes and do not prove a real Nix install/build. They never load live Fish credentials.
+テストは一時ホーム・一時リポジトリを使います。インストーラーとNixのコマンド呼び出しに関するテストは代替プログラムを使うため、実際のNix導入・ビルドの成功を示すものではありません。実機のFishの認証情報は読み込みません。
 
-### Existing deployment
+### 既存の配置方法
 
-The current Git/Tmux links into `~/.dotfiles` remain unchanged. The live Fish configuration remains separate until Home Manager is explicitly activated. The original `scripts/install.sh` is Linux-only; `scripts/setup.sh` moves Fish subdirectories out of the repository. Neither legacy script is part of the Nix workflow and neither should be run for this migration.
+Git・Tmuxから `~/.dotfiles` への既存リンクは維持します。実機のFish設定は、Home Managerで明示的に反映するまで別管理です。旧 `scripts/install.sh` はLinux専用で、`scripts/setup.sh` はFishのサブディレクトリをリポジトリ外へ移動します。どちらもNixの手順には含めず、この移行のために実行しないでください。
 
-## Configuration Details
+## 設定の内容
 
-### Fish Shell
+### Fish
 
-The Fish configuration includes:
-- Modern command replacements (exa for ls, bat for cat, etc.)
-- Git aliases for common operations
-- FZF integration with preview
-- Key bindings for history and directory navigation
-- Fisher plugin manager integration
+- コマンドの置き換え（lsの代わりにexa、catの代わりにbatなど）
+- よく使うGit操作のエイリアス
+- プレビュー付きFZF連携
+- 履歴・ディレクトリ移動のキー割り当て
+- Fisherによるプラグイン管理との連携
 
-### Git Configuration
+### Git
 
-Pre-configured with:
-- User settings (update email address)
-- Useful aliases (st, co, br, lg, etc.)
-- Color output
-- Default pull/push behavior
+- ユーザー設定（利用時にメールアドレスを変更）
+- 操作のエイリアス（st、co、br、lgなど）
+- 色付き出力
+- pull・pushの既定動作
 
-### Tmux Configuration
+### Tmux
 
-Features:
-- Mouse support enabled
-- Custom key bindings for pane navigation
-- Status bar customization
-- 256 color support
+- マウス操作
+- ペイン移動のキー割り当て
+- ステータスバーのカスタマイズ
+- 256色表示
 
-## Tool declarations
+## ツールの導入定義
 
-The Nix declaration currently contains 15 explicit CLI packages plus Fish and Home Manager. This adds `fd` and `lazygit` to the previously published draft. It is smaller than the legacy Linux install list. The [tool inventory](docs/tool-inventory.md) distinguishes declared tools, proposed additions and existing installations that need an ownership/version decision.
+初期の導入対象、バージョン方針、新しい端末での任意のLazyVim初期化については、[再導入対象と導入元](docs/tool-installation.md)を参照してください。
 
-The current editor is Neovim + LazyVim. Its existing configuration remains separately managed; the retired SpaceVim configuration has been removed.
+ツール一式は、明示した20のCLIパッケージとFishで構成します。Home Managerによる設定反映は別の入口です。Git、gh、tmux、jq、Neovimも含みますが、既存の個別設定まで管理対象を広げるものではありません。旧Linux用の導入一覧より小さい構成です。[ツールの棚卸し](docs/tool-inventory.md)では、定義済みの対象、追加候補、導入元・バージョンの判断が残る既存ツールを区別しています。
 
-## Customization
+現在のエディターはNeovim + LazyVimです。既存設定は引き続き別管理とし、使わなくなったSpaceVim設定は削除済みです。
 
-### Git Configuration
+## 自分の環境に合わせる
 
-Before using, update your email in `config/git/gitconfig`:
+### Git設定
+
+利用前に `config/git/gitconfig` のメールアドレスを変更してください。
 
 ```ini
 [user]
@@ -103,9 +105,9 @@ Before using, update your email in `config/git/gitconfig`:
     email = your-actual-email@example.com
 ```
 
-### Fish Plugins
+### Fishプラグイン
 
-Edit `fish/fish_plugins` to add or remove Fisher plugins:
+Fisherのプラグインを追加・削除する場合は `fish/fish_plugins` を編集します。
 
 ```
 jorgebucaran/fisher
@@ -115,12 +117,14 @@ decors/fish-ghq
 0rax/fish-bd
 ```
 
-## Scripts
+## 旧スクリプト
 
-- `scripts/install.sh`: Full installation of tools and dotfiles
-- `scripts/setup.sh`: Setup dotfiles only (moves files to ~/.config with backup of existing configs)
+以下は既存の配布方式です。今回のNix移行では実行しません。
 
-## Directory Structure
+- `scripts/install.sh`：ツールとdotfilesをまとめて導入するLinux用スクリプト
+- `scripts/setup.sh`：既存設定をバックアップし、ファイルを `~/.config` へ移動して配置するスクリプト
+
+## ディレクトリ構成（抜粋）
 
 ```
 dotfiles/
@@ -141,7 +145,12 @@ dotfiles/
 └── README.md
 ```
 
-## License
+## ライセンス
 
-MIT License - see LICENSE file for details.
+MIT License。詳細はLICENSEファイルを参照してください。
 
+## 更新提案と任意のアプリ
+
+DependabotはNixのlock更新を毎日提案する定義です。自動マージや実機へのインストールは行いません。`scripts/update-lock.sh` は別PCで手動のlock更新を準備するためのもので、導入・設定反映はしません。現在固定しているリビジョンは変更していません。[更新・配布方針](docs/tool-installation.md)を参照してください。
+
+[macOSアプリの候補](docs/macos-apps.md)に導入方法と公式リンクを記録しています。フォントとTeXテンプレートは対象外です。[Kali・Parrotの環境](docs/security-environments.md)は任意の隔離ツール環境とし、セキュリティツールをホストへ導入しません。
